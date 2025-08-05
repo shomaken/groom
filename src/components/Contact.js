@@ -229,9 +229,9 @@ const Contact = ({ onNext, onPrev }) => {
             </div>
             
             <div className="footer-links">
-              <button className="footer-link" onClick={() => window.open('/privacy', '_blank')}>Privacy Policy</button>
-              <button className="footer-link" onClick={() => window.open('/terms', '_blank')}>Terms of Service</button>
-              <button className="footer-link" onClick={() => window.open('/whitepaper', '_blank')}>Whitepaper</button>
+              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/privacy', '_blank')}>Privacy Policy</button>
+              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/terms', '_blank')}>Terms of Service</button>
+              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/whitepaper', '_blank')}>Whitepaper</button>
             </div>
           </div>
         </motion.div>
