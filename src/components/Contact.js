@@ -56,7 +56,7 @@ const Contact = ({ onNext, onPrev }) => {
           
           <div className="social-links">
             <motion.a
-              href="#"
+              href="https://x.com/groomtoken"
               className="social-link twitter"
               target="_blank"
               rel="noopener noreferrer"
@@ -70,7 +70,7 @@ const Contact = ({ onNext, onPrev }) => {
             </motion.a>
             
             <motion.a
-              href="#"
+              href="https://t.me/groomtoken"
               className="social-link telegram"
               target="_blank"
               rel="noopener noreferrer"
@@ -84,7 +84,7 @@ const Contact = ({ onNext, onPrev }) => {
             </motion.a>
             
             <motion.a
-              href="#"
+              href="https://discord.gg/groomtoken"
               className="social-link discord"
               target="_blank"
               rel="noopener noreferrer"
@@ -229,9 +229,9 @@ const Contact = ({ onNext, onPrev }) => {
             </div>
             
             <div className="footer-links">
-              <a href="#" className="footer-link">Privacy Policy</a>
-              <a href="#" className="footer-link">Terms of Service</a>
-              <a href="#" className="footer-link">Whitepaper</a>
+              <button className="footer-link" onClick={() => window.open('/privacy', '_blank')}>Privacy Policy</button>
+              <button className="footer-link" onClick={() => window.open('/terms', '_blank')}>Terms of Service</button>
+              <button className="footer-link" onClick={() => window.open('/whitepaper', '_blank')}>Whitepaper</button>
             </div>
           </div>
         </motion.div>
