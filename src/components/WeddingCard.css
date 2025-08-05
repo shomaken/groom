@@ -1,0 +1,146 @@
+.wedding-card {
+  width: 400px;
+  height: 600px;
+  perspective: 1000px;
+  cursor: pointer;
+  position: relative;
+}
+
+.card-front {
+  width: 100%;
+  height: 100%;
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-front::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(168, 230, 207, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 70% 80%, rgba(168, 230, 207, 0.08) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.card-border {
+  width: 90%;
+  height: 90%;
+  border: 3px solid var(--pastel-green);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-container {
+  margin-bottom: 2rem;
+}
+
+.groom-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.invitation-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.invitation-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.invitation-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  line-height: 1.4;
+}
+
+.tap-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--dark-green);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tap-circle {
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--pastel-green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tap-circle::before {
+  content: '👆';
+  font-size: 24px;
+  filter: grayscale(100%);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .wedding-card {
+    width: 300px;
+    height: 450px;
+  }
+  
+  .groom-logo {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .invitation-title {
+    font-size: 2rem;
+  }
+  
+  .invitation-subtitle {
+    font-size: 1rem;
+  }
+  
+  .tap-circle {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .tap-circle::before {
+    font-size: 20px;
+  }
+}
