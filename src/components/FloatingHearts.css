@@ -1,0 +1,66 @@
+.floating-hearts-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+  overflow: hidden;
+}
+
+.floating-heart {
+  position: fixed;
+  color: var(--pastel-sage-green);
+  font-size: 24px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 999;
+  text-shadow: 0 0 8px rgba(168, 213, 186, 0.6);
+  filter: drop-shadow(0 0 4px rgba(168, 213, 186, 0.4));
+  opacity: 0.8;
+}
+
+/* Different heart colors for variety */
+.floating-heart:nth-child(2n) {
+  color: var(--rose-dust-pink);
+  text-shadow: 0 0 8px rgba(238, 200, 194, 0.6);
+  filter: drop-shadow(0 0 4px rgba(238, 200, 194, 0.4));
+}
+
+.floating-heart:nth-child(3n) {
+  color: var(--dusty-beige);
+  text-shadow: 0 0 8px rgba(217, 207, 194, 0.6);
+  filter: drop-shadow(0 0 4px rgba(217, 207, 194, 0.4));
+}
+
+.floating-heart:nth-child(4n) {
+  color: #F4E4BC;
+  text-shadow: 0 0 8px rgba(244, 228, 188, 0.6);
+  filter: drop-shadow(0 0 4px rgba(244, 228, 188, 0.4));
+}
+
+.floating-heart:nth-child(5n) {
+  color: #E8D5D0;
+  text-shadow: 0 0 8px rgba(232, 213, 208, 0.6);
+  filter: drop-shadow(0 0 4px rgba(232, 213, 208, 0.4));
+}
+
+.floating-heart:nth-child(6n) {
+  color: #C9E4D4;
+  text-shadow: 0 0 8px rgba(201, 228, 212, 0.6);
+  filter: drop-shadow(0 0 4px rgba(201, 228, 212, 0.4));
+}
+
+/* Responsive sizing */
+@media (max-width: 768px) {
+  .floating-heart {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-heart {
+    font-size: 18px;
+  }
+}
