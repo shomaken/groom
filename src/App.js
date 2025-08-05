@@ -9,6 +9,7 @@ import AfterWedding from './components/AfterWedding';
 import TokenInfo from './components/TokenInfo';
 import Contact from './components/Contact';
 import Navbar from './components/Navbar';
+import FloatingHearts from './components/FloatingHearts';
 
 function App() {
   const [isCardOpen, setIsCardOpen] = useState(false);
@@ -53,6 +54,7 @@ function App() {
 
   return (
     <div className="App">
+      <FloatingHearts />
       <Navbar 
         currentPage={currentPage} 
         onPageChange={handlePageChange} 
