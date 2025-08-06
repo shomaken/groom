@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import tokenService from '../services/tokenService';
 
 const LiveFundTracker = ({ onNext, onPrev }) => {
   const [tokenData, setTokenData] = useState({
-    price: 0.000001,
-    marketCap: 50000,
-    volume24h: 8500,
-    totalRaised: 4200
+    price: 'Loading...',
+    marketCap: 'Loading...',
+    volume: 'Loading...',
+    totalRaised: 'Loading...',
+    lastUpdated: null,
+    success: false
   });
   
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const milestones = [
     { amount: 2000, description: "Dress and Suit", emoji: "👰🤵" },
@@ -21,30 +25,29 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   ];
 
   useEffect(() => {
-    // Simulate API call - In production, replace with actual API calls
+    // Fetch real token data from our backend
     const fetchTokenData = async () => {
       try {
-        // This would be replaced with actual API calls to Dexscreener, CoinGecko, etc.
-        // For demo purposes, we'll use mock data with some randomization
-        const mockData = {
-          price: (Math.random() * 0.000002 + 0.000001).toFixed(8),
-          marketCap: Math.floor(Math.random() * 20000 + 45000),
-          volume24h: Math.floor(Math.random() * 5000 + 7000),
-          totalRaised: Math.floor(Math.random() * 1000 + 4000)
-        };
+        setError(null);
+        const data = await tokenService.getTokenMetrics();
         
-        setTokenData(mockData);
+        setTokenData(data);
         setLoading(false);
+        
+        if (!data.success && data.error) {
+          setError(data.error);
+        }
       } catch (error) {
         console.error('Error fetching token data:', error);
+        setError(error.message || 'Failed to fetch token data');
         setLoading(false);
       }
     };
 
     fetchTokenData();
     
-    // Update data every 30 seconds
-    const interval = setInterval(fetchTokenData, 30000);
+    // Update data every 60 seconds
+    const interval = setInterval(fetchTokenData, 60000);
     
     return () => clearInterval(interval);
   }, []);
@@ -117,15 +120,15 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             className="stats-grid"
           >
             <div className="stat-item">
-              <div className="stat-value">${tokenData.price}</div>
+              <div className="stat-value">{tokenData.price}</div>
               <div className="stat-label">Token Price</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">${formatNumber(tokenData.marketCap)}</div>
+              <div className="stat-value">{tokenData.marketCap}</div>
               <div className="stat-label">Market Cap</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">${formatNumber(tokenData.volume24h)}</div>
+              <div className="stat-value">{tokenData.volume}</div>
               <div className="stat-label">24h Volume</div>
             </div>
           </motion.div>
@@ -136,7 +139,13 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="total-raised"
           >
-            <h3>Raised for GROOM so far: ${formatNumber(tokenData.totalRaised)}</h3>
+            <h3>Raised for GROOM so far: {tokenData.totalRaised}</h3>
+            {tokenData.lastUpdated && (
+              <p className="last-updated">
+                Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
+                {error && <span className="error-indicator"> (Error: {error})</span>}
+              </p>
+            )}
           </motion.div>
         </div>
 
