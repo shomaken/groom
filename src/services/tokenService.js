@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base URL for our backend API
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://groom-backend-production.up.railway.app' // Railway backend URL
+  ? 'https://hanging-coach-production.up.railway.app' // Railway backend URL
   : 'http://localhost:3001'; // In development, backend runs on port 3001
 
 class TokenService {
