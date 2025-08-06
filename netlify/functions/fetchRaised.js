@@ -1,0 +1,129 @@
+const fetch = require('node-fetch'); // required for Node.js < 18
+
+exports.handler = async function (event, context) {
+  const API_KEY = process.env.BAGS_API_KEY;
+  const mint = "dWd8vyAH9pQMMG1bkQWiGnyx8LjjuTDHsk8qcsCBAGS";
+  const url = `https://public-api-v2.bags.fm/api/v1/analytics/token-metrics?mint=${mint}`;
+
+  // Enable CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'GROOM-Website/1.0'
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    
+    // Format the response data
+    const formattedData = {
+      totalRaised: formatCurrency(data.response?.totalRaised || data.totalRaised || 0),
+      price: formatPrice(data.response?.price || data.price || 0),
+      marketCap: formatCurrency(data.response?.marketCap || data.marketCap || data.fdv || 0),
+      volume: formatCurrency(data.response?.volume || data.volume || data.volume_24h || 0),
+      holders: data.response?.holders || data.holders || data.holder_count || 0,
+      lastUpdated: new Date().toISOString(),
+      success: true
+    };
+
+    return {
+      statusCode: 200,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formattedData)
+    };
+  } catch (err) {
+    console.error('Error fetching token data:', err);
+    
+    // Return demo data if API fails
+    const demoData = generateDemoData();
+    
+    return {
+      statusCode: 200, // Return 200 with demo data instead of error
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...demoData,
+        success: false,
+        error: err.message,
+        isDemoData: true
+      })
+    };
+  }
+};
+
+// Helper functions for formatting
+function formatCurrency(value) {
+  if (!value || value === 0) return '$0';
+  
+  if (typeof value === 'string') {
+    if (value.includes('$') || value.includes('SOL')) return value;
+    value = parseFloat(value);
+  }
+  
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  } else {
+    return `$${value.toFixed(2)}`;
+  }
+}
+
+function formatPrice(value) {
+  if (!value || value === 0) return '$0.00';
+  
+  if (typeof value === 'string') {
+    if (value.includes('$')) return value;
+    value = parseFloat(value);
+  }
+  
+  if (value < 0.01) {
+    return `$${value.toFixed(6)}`;
+  } else {
+    return `$${value.toFixed(4)}`;
+  }
+}
+
+// Generate realistic demo data
+function generateDemoData() {
+  const baseTotalRaised = 4250 + Math.random() * 1000; // $4250-$5250
+  const baseVolume = 8500 + Math.random() * 2000; // $8500-$10500
+  const basePrice = 0.0012 + Math.random() * 0.0003; // $0.0012-$0.0015
+  const baseMarketCap = 52000 + Math.random() * 10000; // $52000-$62000
+  const baseHolders = 150 + Math.floor(Math.random() * 50); // 150-200 holders
+  
+  return {
+    totalRaised: formatCurrency(baseTotalRaised),
+    marketCap: formatCurrency(baseMarketCap),
+    price: formatPrice(basePrice),
+    volume: formatCurrency(baseVolume),
+    holders: baseHolders,
+    lastUpdated: new Date().toISOString()
+  };
+} 
