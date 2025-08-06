@@ -1,9 +1,5 @@
-import axios from 'axios';
-
-// Base URL for our backend API
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://hanging-coach-production.up.railway.app' // Railway backend URL
-  : 'http://localhost:3001'; // In development, backend runs on port 3001
+// Netlify function endpoint
+const NETLIFY_FUNCTION_URL = '/.netlify/functions/fetchRaised';
 
 class TokenService {
   constructor() {
@@ -24,19 +20,20 @@ class TokenService {
         return this.cache;
       }
 
-      console.log('Fetching token metrics from backend...');
+      console.log('Fetching token metrics from Netlify function...');
       
-      const response = await axios.get(`${API_BASE_URL}/api/metrics`, {
-        timeout: 5000 // 5 second timeout
+      const response = await fetch(NETLIFY_FUNCTION_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      // Check if response is HTML (means backend not running)
-      if (typeof response.data === 'string' && response.data.includes('<!doctype html>')) {
-        console.log('Backend not available');
-        throw new Error('Backend server not available');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = response.data;
+      const data = await response.json();
       
       // Update cache
       this.cache = data;
@@ -69,23 +66,7 @@ class TokenService {
 
 
 
-  /**
-   * Get backend health status
-   */
-  async getHealthStatus() {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/health`, {
-        timeout: 5000
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      return {
-        status: 'ERROR',
-        error: error.message
-      };
-    }
-  }
+
 
   /**
    * Clear cache to force fresh data fetch
