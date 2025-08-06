@@ -143,6 +143,7 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             {tokenData.lastUpdated && (
               <p className="last-updated">
                 Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
+
                 {error && <span className="error-indicator"> (Error: {error})</span>}
               </p>
             )}
