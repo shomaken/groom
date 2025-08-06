@@ -145,47 +145,12 @@ const TokenInfo = ({ onNext, onPrev }) => {
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.8 }}
-          className="tokenomics"
-        >
-          <div className="card">
-            <h4>Tokenomics</h4>
-            <div className="tokenomics-grid">
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">1,000,000,000</div>
-                <div className="tokenomics-label">Total Supply</div>
-              </div>
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">1%</div>
-                <div className="tokenomics-label">Wedding Fund Fee</div>
-              </div>
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">0%</div>
-                <div className="tokenomics-label">Buy Tax</div>
-              </div>
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">1%</div>
-                <div className="tokenomics-label">Sell Tax</div>
-              </div>
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">Solana</div>
-                <div className="tokenomics-label">Blockchain</div>
-              </div>
-              <div className="tokenomics-item">
-                <div className="tokenomics-value">SPL</div>
-                <div className="tokenomics-label">Token Standard</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 2.1 }}
+          transition={{ duration: 0.8, delay: 1.8 }}
           className="disclaimer"
         >
           <div className="card">
