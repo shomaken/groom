@@ -521,6 +521,11 @@ p {
   font-weight: 500;
 }
 
+.mock-indicator {
+  color: #f39c12;
+  font-weight: 500;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
