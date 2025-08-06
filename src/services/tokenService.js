@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base URL for our backend API
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // In production, backend serves from same domain
+  ? 'https://groom-backend-production.up.railway.app' // Railway backend URL
   : 'http://localhost:3001'; // In development, backend runs on port 3001
 
 class TokenService {
@@ -13,7 +13,7 @@ class TokenService {
   }
 
   /**
-   * Fetch token metrics from our backend
+   * Fetch token metrics from our backend or return mock data
    */
   async getTokenMetrics() {
     try {
@@ -27,8 +27,14 @@ class TokenService {
       console.log('Fetching token metrics from backend...');
       
       const response = await axios.get(`${API_BASE_URL}/api/metrics`, {
-        timeout: 10000 // 10 second timeout
+        timeout: 5000 // 5 second timeout
       });
+
+      // Check if response is HTML (means backend not running)
+      if (typeof response.data === 'string' && response.data.includes('<!doctype html>')) {
+        console.log('Backend not available');
+        throw new Error('Backend server not available');
+      }
 
       const data = response.data;
       
@@ -40,14 +46,14 @@ class TokenService {
       return data;
 
     } catch (error) {
-      console.error('Error fetching token metrics:', error);
+      console.error('Backend not available:', error.message);
       
       // Return cached data if available
       if (this.cache) {
-        return { ...this.cache, error: 'Failed to update data' };
+        return { ...this.cache, error: 'Using cached data' };
       }
       
-      // Return default error state
+      // Return error state when backend is not available
       return {
         totalRaised: 'Error',
         marketCap: 'Error',
@@ -56,10 +62,12 @@ class TokenService {
         holders: 'Error',
         lastUpdated: new Date().toISOString(),
         success: false,
-        error: error.message || 'Network error'
+        error: error.message || 'Backend not available'
       };
     }
   }
+
+
 
   /**
    * Get backend health status
