@@ -4,18 +4,12 @@ exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
   const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token
   
-  // Try different possible Bags.fm API endpoints for lifetime fees
+  // Bags.fm API endpoints for lifetime fees (official endpoint first)
   const possibleBagsEndpoints = [
-    `https://public-api-v2.bags.fm/token-launch/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/token-launch/lifetime-fees?tokenMint=${mint}`, // Official endpoint from docs
     `https://public-api-v2.bags.fm/api/v1/token-launch/lifetime-fees?tokenMint=${mint}`,
     `https://public-api-v2.bags.fm/api/token-launch/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/v1/token-launch/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/api/v1/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/api/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/v1/lifetime-fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/fees?tokenMint=${mint}`,
-    `https://public-api-v2.bags.fm/token/${mint}/fees`
+    `https://public-api-v2.bags.fm/v1/token-launch/lifetime-fees?tokenMint=${mint}`
   ];
   const birdeyeUrl = `https://public-api.birdeye.so/public/price?address=${mint}`;
   const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
@@ -85,27 +79,23 @@ exports.handler = async function (event, context) {
     // Extract lifetime fees from Bags.fm API response
     console.log(`Processing lifetime fees from: ${workingEndpoint}`);
     
-    // Look for lifetime fees in different possible field names
-    const lifetimeFeesRaw = data.lifetimeFees || data.fees || data.totalFees || data.lifetime_fees || data.amount || 0;
-    console.log('Raw lifetime fees value:', lifetimeFeesRaw);
+    // According to API docs, response contains:
+    // { success: boolean, response: string (lamports) }
+    const lifetimeFeesLamports = data.response || data.lifetimeFees || data.fees || '0';
+    console.log('Raw lifetime fees (lamports string):', lifetimeFeesLamports);
     
-    // Convert lamports to SOL
+    // Convert lamports string to SOL
     const LAMPORTS_PER_SOL = 1000000000;
     let lifetimeFeesSOL = 0;
     
-    if (typeof lifetimeFeesRaw === 'string') {
-      // If it's a string, try to parse it
-      const parsed = parseInt(lifetimeFeesRaw);
-      if (!isNaN(parsed)) {
-        lifetimeFeesSOL = parsed / LAMPORTS_PER_SOL;
-      }
-    } else if (typeof lifetimeFeesRaw === 'number') {
-      // If it's a number, check if it's likely in lamports
-      if (lifetimeFeesRaw > 1000000) { // Likely in lamports if > 1M
-        lifetimeFeesSOL = lifetimeFeesRaw / LAMPORTS_PER_SOL;
-      } else {
-        lifetimeFeesSOL = lifetimeFeesRaw; // Already in SOL
-      }
+    try {
+      // Parse the lamports string (supports bigint values)
+      const lamportsValue = BigInt(lifetimeFeesLamports);
+      lifetimeFeesSOL = Number(lamportsValue) / LAMPORTS_PER_SOL;
+      console.log(`Converted ${lifetimeFeesLamports} lamports to ${lifetimeFeesSOL} SOL`);
+    } catch (error) {
+      console.log('Error parsing lamports value:', error.message);
+      lifetimeFeesSOL = 0;
     }
     
     console.log(`Lifetime fees: ${lifetimeFeesSOL} SOL`);
@@ -122,17 +112,18 @@ exports.handler = async function (event, context) {
       totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : demoData.totalRaised,
       totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
       lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
-      lifetimeFeesLamports: (lifetimeFeesSOL * LAMPORTS_PER_SOL).toLocaleString(),
+      lifetimeFeesLamports: lifetimeFeesLamports, // Keep original string format
       price: demoData.price, // Demo data
       marketCap: demoData.marketCap, // Demo data
       volume: demoData.volume, // Demo data
       holders: demoData.holders, // Demo data
       lastUpdated: new Date().toISOString(),
       success: true,
-      source: lifetimeFeesSOL > 0 ? `Bags.fm Lifetime Fees (${workingEndpoint})` : 'Demo Data with Bags.fm attempt',
+      source: lifetimeFeesSOL > 0 ? `Bags.fm Lifetime Fees API` : 'Demo Data (Bags.fm API unavailable)',
       isRealLifetimeFees: lifetimeFeesSOL > 0,
       workingEndpoint: workingEndpoint,
-      rawLifetimeFees: lifetimeFeesRaw
+      apiSuccess: data.success || false,
+      rawApiResponse: data
     };
 
     return {
