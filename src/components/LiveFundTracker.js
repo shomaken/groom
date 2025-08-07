@@ -95,21 +95,38 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     
     const totalRaised = getTotalRaisedNumber();
     
-    // Find the previous milestone amount
-    const previousMilestone = milestones
-      .filter(m => m.amount < milestoneAmount)
-      .reduce((max, current) => current.amount > max ? current.amount : max, 0);
+    // Calculate cumulative amounts for sequential milestone filling
+    let cumulativeAmount = 0;
+    let milestoneIndex = -1;
+    
+    // Find which milestone this is and calculate cumulative amount up to previous milestone
+    for (let i = 0; i < milestones.length; i++) {
+      if (milestones[i].amount === milestoneAmount) {
+        milestoneIndex = i;
+        break;
+      }
+      cumulativeAmount += milestones[i].amount;
+    }
     
     // Calculate how much money is available for this specific milestone
-    const availableForThisMilestone = totalRaised - previousMilestone;
+    const availableForThisMilestone = totalRaised - cumulativeAmount;
     
     // Calculate the range this milestone needs to be completed
-    const milestoneRange = milestoneAmount - previousMilestone;
+    const milestoneRange = milestoneAmount;
     
-    if (totalRaised >= milestoneAmount) {
+    // Debug logging
+    console.log(`Milestone $${milestoneAmount}:`, {
+      totalRaised: `$${totalRaised.toLocaleString()}`,
+      cumulativeAmount: `$${cumulativeAmount.toLocaleString()}`,
+      availableForThisMilestone: `$${availableForThisMilestone.toLocaleString()}`,
+      milestoneRange: `$${milestoneRange.toLocaleString()}`,
+      percentage: `${((availableForThisMilestone / milestoneRange) * 100).toFixed(1)}%`
+    });
+    
+    if (totalRaised >= (cumulativeAmount + milestoneAmount)) {
       // Milestone is fully completed
       return 100;
-    } else if (totalRaised <= previousMilestone) {
+    } else if (totalRaised <= cumulativeAmount) {
       // Not enough money to start this milestone yet
       return 0;
     } else {
@@ -122,22 +139,35 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   const isCompleted = (milestoneAmount) => {
     if (!hasValidData()) return false;
     const totalRaised = getTotalRaisedNumber();
-    return totalRaised >= milestoneAmount;
+    
+    // Calculate cumulative amount up to this milestone
+    let cumulativeAmount = 0;
+    for (let i = 0; i < milestones.length; i++) {
+      if (milestones[i].amount === milestoneAmount) {
+        cumulativeAmount += milestoneAmount;
+        break;
+      }
+      cumulativeAmount += milestones[i].amount;
+    }
+    
+    return totalRaised >= cumulativeAmount;
   };
 
   const isActive = (milestoneAmount, index) => {
     if (!hasValidData()) return false;
     const totalRaised = getTotalRaisedNumber();
     
-    // First milestone is active if we haven't reached it yet
-    if (index === 0) return totalRaised < milestoneAmount;
+    // Calculate cumulative amount up to previous milestone
+    let cumulativeAmount = 0;
+    for (let i = 0; i < index; i++) {
+      cumulativeAmount += milestones[i].amount;
+    }
     
-    // For other milestones, check if we've completed the previous one but not this one
-    const previousMilestone = milestones[index - 1];
-    const isPreviousCompleted = totalRaised >= previousMilestone.amount;
-    const isThisCompleted = totalRaised >= milestoneAmount;
+    // Calculate cumulative amount up to this milestone
+    const cumulativeAmountWithThis = cumulativeAmount + milestoneAmount;
     
-    return isPreviousCompleted && !isThisCompleted;
+    // Milestone is active if we've completed all previous ones but not this one
+    return totalRaised >= cumulativeAmount && totalRaised < cumulativeAmountWithThis;
   };
 
   if (loading) {
