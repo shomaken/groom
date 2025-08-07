@@ -193,35 +193,29 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
         <h2>Fund Our Future</h2>
         
         <div className="token-stats">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="stats-grid"
-          >
-                         <div className="stat-item">
-               <div className="stat-value">
-                 {tokenData.success && tokenData.isRealMetrics ? tokenData.price : 'Error'}
-               </div>
-               <div className="stat-label">Token Price</div>
-             </div>
+                     <motion.div
+             initial={{ opacity: 0, scale: 0.9 }}
+             animate={{ opacity: 1, scale: 1 }}
+             transition={{ duration: 0.6, delay: 0.2 }}
+             className="stats-grid"
+           >
+                          <div className="stat-item">
+                <div className="stat-value">
+                  {tokenData.success && tokenData.isRealMetrics ? tokenData.price : 'Error'}
+                </div>
+                <div className="stat-label">Token Price</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">
+                  {tokenData.success && tokenData.isRealMetrics ? tokenData.marketCap : 'Error'}
+                </div>
+                <div className="stat-label">Market Cap</div>
+              </div>
              <div className="stat-item">
-               <div className="stat-value">
-                 {tokenData.success && tokenData.isRealMetrics ? tokenData.marketCap : 'Error'}
-               </div>
-               <div className="stat-label">Market Cap</div>
+               <div className="stat-value">${tokenData.solPrice ? tokenData.solPrice.toFixed(2) : '170.00'}</div>
+               <div className="stat-label">SOL Price</div>
              </div>
-             <div className="stat-item">
-               <div className="stat-value">
-                 {tokenData.success && tokenData.isRealMetrics ? tokenData.volume : 'Error'}
-               </div>
-               <div className="stat-label">24h Volume</div>
-             </div>
-            <div className="stat-item">
-              <div className="stat-value">${tokenData.solPrice ? tokenData.solPrice.toFixed(2) : '170.00'}</div>
-              <div className="stat-label">SOL Price</div>
-            </div>
-          </motion.div>
+           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
