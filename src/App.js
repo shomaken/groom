@@ -10,6 +10,7 @@ import TokenInfo from './components/TokenInfo';
 import Contact from './components/Contact';
 import Navbar from './components/Navbar';
 import FloatingHearts from './components/FloatingHearts';
+import Silk from './components/Silk';
 
 function App() {
   const [isCardOpen, setIsCardOpen] = useState(false);
@@ -54,13 +55,22 @@ function App() {
 
   return (
     <div className="App">
+      <div className="silk-background">
+        <Silk 
+          speed={3}
+          scale={1.5}
+          color="#E8D5C4"
+          noiseIntensity={3.5}
+          rotation={0}
+        />
+      </div>
       <FloatingHearts />
       <Navbar 
         currentPage={currentPage} 
         onPageChange={handlePageChange} 
         isCardOpen={isCardOpen} 
       />
-      <div className="background-pattern"></div>
+
       <AnimatePresence mode="wait">
         {!isCardOpen ? (
           <motion.div
