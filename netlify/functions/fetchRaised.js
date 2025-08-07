@@ -2,7 +2,9 @@ const fetch = require('node-fetch'); // required for Node.js < 18
 
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
-  const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS";
+  // Temporarily using USDC for testing - replace with actual GROOM token when available
+  const mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC for testing
+  // const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token (not yet available)
   const bagsUrl = `https://public-api-v2.bags.fm/api/v1/analytics/token-metrics?mint=${mint}`;
   const birdeyeUrl = `https://public-api.birdeye.so/public/price?address=${mint}`;
   const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
