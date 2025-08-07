@@ -2,7 +2,7 @@ const fetch = require('node-fetch'); // required for Node.js < 18
 
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
-  const mint = "dWd8vyAH9pQMMG1bkQWiGnyx8LjjuTDHsk8qcsCBAGS";
+  const mint = "81KzC6LsZEN4BGcMRcg5BoanAsXk4ctP8gFhQDweBAGS";
   const url = `https://public-api-v2.bags.fm/api/v1/analytics/token-metrics?mint=${mint}`;
 
   // Enable CORS
