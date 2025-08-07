@@ -72,6 +72,83 @@ async function getSolPrice() {
   }
 }
 
+// Function to fetch real token metrics from Jupiter API
+async function getTokenMetrics(mint) {
+  try {
+    console.log('Fetching real token metrics from Jupiter API...');
+    
+    // Jupiter API endpoint for token price
+    const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
+    
+    const response = await fetch(jupiterUrl, {
+      headers: {
+        'User-Agent': 'GROOM-Wedding-App/1.0'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const tokenData = data.data[mint];
+      
+      if (tokenData) {
+        console.log('✅ Jupiter API response:', JSON.stringify(tokenData, null, 2));
+        
+        const price = tokenData.price;
+        const volume24h = tokenData.volume24h || 0;
+        
+        // Calculate market cap (we'll need circulating supply)
+        // For now, we'll estimate based on price and use a reasonable supply
+        const estimatedSupply = 1000000000; // 1B tokens (adjust as needed)
+        const marketCap = price * estimatedSupply;
+        
+        return {
+          price: price,
+          volume: volume24h,
+          marketCap: marketCap,
+          success: true,
+          source: 'Jupiter API'
+        };
+      }
+    }
+    
+    console.log('❌ Jupiter API failed, trying Dexscreener...');
+    
+    // Fallback to Dexscreener API
+    const dexscreenerUrl = `https://api.dexscreener.com/latest/dex/tokens/${mint}`;
+    
+    const dexscreenerResponse = await fetch(dexscreenerUrl, {
+      headers: {
+        'User-Agent': 'GROOM-Wedding-App/1.0'
+      }
+    });
+    
+    if (dexscreenerResponse.ok) {
+      const dexscreenerData = await dexscreenerResponse.json();
+      const pairs = dexscreenerData.pairs;
+      
+      if (pairs && pairs.length > 0) {
+        const pair = pairs[0]; // Get the first pair (usually the most liquid)
+        console.log('✅ Dexscreener API response:', JSON.stringify(pair, null, 2));
+        
+        return {
+          price: parseFloat(pair.priceUsd) || 0,
+          volume: parseFloat(pair.volume24h) || 0,
+          marketCap: parseFloat(pair.marketCap) || 0,
+          success: true,
+          source: 'Dexscreener API'
+        };
+      }
+    }
+    
+    console.log('❌ Both Jupiter and Dexscreener APIs failed');
+    return { success: false };
+    
+  } catch (error) {
+    console.log(`❌ Error fetching token metrics: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+}
+
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
   const mint = "3ofiPaQdD6GcspNXSk6xQqB1wzEtJALikfcSmeqqBAGS"; // GROOM token
@@ -178,24 +255,38 @@ exports.handler = async function (event, context) {
     
     console.log(`SOL price: $${solPrice}, USD value: $${lifetimeFeesUSD.toFixed(2)}`);
     
-    // Generate demo data for other metrics
+    // Fetch real token metrics (price, market cap, volume)
+    const tokenMetrics = await getTokenMetrics(mint);
+    
+    // Use real metrics if available, otherwise fall back to demo data
     const demoData = generateDemoData();
     
-    // Format response with real lifetime fees and demo other metrics
+    const finalMetrics = {
+      price: tokenMetrics.success ? formatPrice(tokenMetrics.price) : demoData.price,
+      marketCap: tokenMetrics.success ? formatCurrency(tokenMetrics.marketCap) : demoData.marketCap,
+      volume: tokenMetrics.success ? formatCurrency(tokenMetrics.volume) : demoData.volume,
+      holders: demoData.holders, // Keep demo data for holders (not available in most APIs)
+      isRealMetrics: tokenMetrics.success,
+      metricsSource: tokenMetrics.source || 'Demo Data'
+    };
+    
+    // Format response with real lifetime fees and real/demo other metrics
     const formattedData = {
       totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : demoData.totalRaised,
       totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
       solPrice: solPrice, // Include current SOL price in response
       lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
       lifetimeFeesLamports: lifetimeFeesLamports, // Keep original string format
-      price: demoData.price, // Demo data
-      marketCap: demoData.marketCap, // Demo data
-      volume: demoData.volume, // Demo data
-      holders: demoData.holders, // Demo data
+      price: finalMetrics.price,
+      marketCap: finalMetrics.marketCap,
+      volume: finalMetrics.volume,
+      holders: finalMetrics.holders,
       lastUpdated: new Date().toISOString(),
       success: true,
       source: lifetimeFeesSOL > 0 ? `Bags.fm Lifetime Fees API` : 'Demo Data (Bags.fm API unavailable)',
       isRealLifetimeFees: lifetimeFeesSOL > 0,
+      isRealMetrics: finalMetrics.isRealMetrics,
+      metricsSource: finalMetrics.metricsSource,
       workingEndpoint: workingEndpoint,
       apiSuccess: data.success || false,
       rawApiResponse: data
@@ -215,8 +306,20 @@ exports.handler = async function (event, context) {
     // Get SOL price even if Bags.fm fails
     const solPrice = await getSolPrice();
     
+    // Try to get real token metrics even if Bags.fm fails
+    const tokenMetrics = await getTokenMetrics(mint);
+    
     // Return demo data if anything fails
     const demoData = generateDemoData();
+    
+    const finalMetrics = {
+      price: tokenMetrics.success ? formatPrice(tokenMetrics.price) : demoData.price,
+      marketCap: tokenMetrics.success ? formatCurrency(tokenMetrics.marketCap) : demoData.marketCap,
+      volume: tokenMetrics.success ? formatCurrency(tokenMetrics.volume) : demoData.volume,
+      holders: demoData.holders,
+      isRealMetrics: tokenMetrics.success,
+      metricsSource: tokenMetrics.source || 'Demo Data'
+    };
     
     return {
       statusCode: 200,
@@ -225,11 +328,14 @@ exports.handler = async function (event, context) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        ...demoData,
+        ...finalMetrics,
+        totalRaised: demoData.totalRaised,
+        totalRaisedSOL: `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
         solPrice: solPrice, // Include current SOL price
         success: false,
         error: err.message,
         isDemoData: true,
+        isRealLifetimeFees: false,
         note: 'Demo data due to error'
       })
     };
