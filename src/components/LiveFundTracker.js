@@ -131,6 +131,10 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
               <div className="stat-value">{tokenData.volume}</div>
               <div className="stat-label">24h Volume</div>
             </div>
+            <div className="stat-item">
+              <div className="stat-value">${tokenData.solPrice ? tokenData.solPrice.toFixed(2) : '170.00'}</div>
+              <div className="stat-label">SOL Price</div>
+            </div>
           </motion.div>
 
           <motion.div
@@ -140,10 +144,14 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             className="total-raised"
           >
             <h3>Raised for GROOM so far: {tokenData.totalRaised}</h3>
+            {tokenData.totalRaisedSOL && (
+              <p className="sol-amount">({tokenData.totalRaisedSOL})</p>
+            )}
             {tokenData.lastUpdated && (
               <p className="last-updated">
                 Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
 
+                {tokenData.isDemoData && <span className="demo-indicator"> (Demo Data)</span>}
                 {error && <span className="error-indicator"> (Error: {error})</span>}
               </p>
             )}
