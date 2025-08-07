@@ -2,7 +2,7 @@ const fetch = require('node-fetch'); // required for Node.js < 18
 
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
-  const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token
+  const mint = "3ofiPaQdD6GcspNXSk6xQqB1wzEtJALikfcSmeqqBAGS"; // GROOM token
   
   // Bags.fm API endpoints for lifetime fees (official endpoint first)
   const possibleBagsEndpoints = [
