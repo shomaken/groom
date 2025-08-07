@@ -13,7 +13,6 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   });
   
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const milestones = [
     { amount: 2000, description: "Dress and Suit", emoji: "👰🤵" },
@@ -28,18 +27,12 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     // Fetch real token data from our backend
     const fetchTokenData = async () => {
       try {
-        setError(null);
         const data = await tokenService.getTokenMetrics();
         
         setTokenData(data);
         setLoading(false);
-        
-        if (!data.success && data.error) {
-          setError(data.error);
-        }
       } catch (error) {
         console.error('Error fetching token data:', error);
-        setError(error.message || 'Failed to fetch token data');
         setLoading(false);
       }
     };
