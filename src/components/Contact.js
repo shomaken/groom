@@ -66,16 +66,12 @@ const Contact = ({ onNext, onPrev }) => {
             <div className="footer-text">
               <h4>GROOM</h4>
               <p>Building love on the blockchain, one block at a time.</p>
-              <p className="copyright">
-                © 2024 GROOM. Built with love for our community.
-              </p>
+                             <p className="copyright">
+                 © 2025 GROOM. Built with love for our community.
+               </p>
             </div>
             
-            <div className="footer-links">
-              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/privacy', '_blank')}>Privacy Policy</button>
-              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/terms', '_blank')}>Terms of Service</button>
-              <button className="footer-link" onClick={() => window.open('https://groomtoken.com/whitepaper', '_blank')}>Whitepaper</button>
-            </div>
+
           </div>
         </motion.div>
       </motion.div>
