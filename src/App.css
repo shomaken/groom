@@ -533,6 +533,11 @@ p {
   font-weight: 500;
 }
 
+.real-data-indicator {
+  color: #27ae60;
+  font-weight: 500;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
