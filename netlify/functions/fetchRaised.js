@@ -295,10 +295,33 @@ exports.handler = async function (event, context) {
     let lifetimeFeesSOL = 0;
     
     try {
-      // Parse the lamports string (supports bigint values)
-      const lamportsValue = BigInt(lifetimeFeesLamports);
-      lifetimeFeesSOL = Number(lamportsValue) / LAMPORTS_PER_SOL;
-      console.log(`Converted ${lifetimeFeesLamports} lamports to ${lifetimeFeesSOL} SOL`);
+      // Parse the lamports string (supports bigint values and decimals)
+      let lamportsValue;
+      
+      // Check if the value contains a decimal point
+      if (lifetimeFeesLamports.includes('.')) {
+        // Handle decimal values - this might be SOL instead of lamports
+        const decimalValue = parseFloat(lifetimeFeesLamports);
+        if (isNaN(decimalValue)) {
+          throw new Error('Invalid decimal value');
+        }
+        
+        // If the value is less than 1000, it's likely already in SOL
+        if (decimalValue < 1000) {
+          lifetimeFeesSOL = decimalValue;
+          console.log(`Value appears to be in SOL: ${lifetimeFeesLamports} SOL`);
+        } else {
+          // If it's a large decimal, treat as lamports and convert
+          lamportsValue = BigInt(Math.floor(decimalValue));
+          lifetimeFeesSOL = Number(lamportsValue) / LAMPORTS_PER_SOL;
+          console.log(`Converted ${lifetimeFeesLamports} lamports to ${lifetimeFeesSOL} SOL`);
+        }
+      } else {
+        // Handle integer values directly
+        lamportsValue = BigInt(lifetimeFeesLamports);
+        lifetimeFeesSOL = Number(lamportsValue) / LAMPORTS_PER_SOL;
+        console.log(`Converted ${lifetimeFeesLamports} lamports to ${lifetimeFeesSOL} SOL`);
+      }
       
       // Validate the converted value
       if (lifetimeFeesSOL <= 0 || isNaN(lifetimeFeesSOL)) {
