@@ -119,18 +119,24 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="stats-grid"
           >
-            <div className="stat-item">
-              <div className="stat-value">{tokenData.price}</div>
-              <div className="stat-label">Token Price</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{tokenData.marketCap}</div>
-              <div className="stat-label">Market Cap</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{tokenData.volume}</div>
-              <div className="stat-label">24h Volume</div>
-            </div>
+                         <div className="stat-item">
+               <div className="stat-value">
+                 {tokenData.success && tokenData.isRealMetrics ? tokenData.price : 'Error'}
+               </div>
+               <div className="stat-label">Token Price</div>
+             </div>
+             <div className="stat-item">
+               <div className="stat-value">
+                 {tokenData.success && tokenData.isRealMetrics ? tokenData.marketCap : 'Error'}
+               </div>
+               <div className="stat-label">Market Cap</div>
+             </div>
+             <div className="stat-item">
+               <div className="stat-value">
+                 {tokenData.success && tokenData.isRealMetrics ? tokenData.volume : 'Error'}
+               </div>
+               <div className="stat-label">24h Volume</div>
+             </div>
             <div className="stat-item">
               <div className="stat-value">${tokenData.solPrice ? tokenData.solPrice.toFixed(2) : '170.00'}</div>
               <div className="stat-label">SOL Price</div>
@@ -143,18 +149,16 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="total-raised"
           >
-            <h3>Raised for GROOM so far: {tokenData.totalRaised}</h3>
-            {tokenData.totalRaisedSOL && (
-              <p className="sol-amount">({tokenData.totalRaisedSOL})</p>
-            )}
+                         <h3>Raised for GROOM so far: {tokenData.success && tokenData.isRealLifetimeFees ? tokenData.totalRaised : 'Error: No data available'}</h3>
+                         {tokenData.success && tokenData.isRealLifetimeFees && tokenData.totalRaisedSOL && (
+               <p className="sol-amount">({tokenData.totalRaisedSOL})</p>
+             )}
                          {tokenData.lastUpdated && (
                <p className="last-updated">
                  Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
                  {tokenData.isRealLifetimeFees && <span className="real-data-indicator"> • Real Lifetime Fees</span>}
                  {tokenData.isRealMetrics && <span className="real-data-indicator"> • Real Token Metrics</span>}
-                 {!tokenData.isRealLifetimeFees && <span className="demo-indicator"> • Demo Lifetime Fees</span>}
-                 {!tokenData.isRealMetrics && <span className="demo-indicator"> • Demo Token Metrics</span>}
-                 {error && <span className="error-indicator"> (Error: {error})</span>}
+                 {!tokenData.success && <span className="error-indicator"> • API Error: {tokenData.error || 'Unknown error'}</span>}
                </p>
              )}
           </motion.div>
