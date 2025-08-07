@@ -538,6 +538,11 @@ p {
   font-weight: 500;
 }
 
+.stat-item .stat-value:contains('Error') {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
