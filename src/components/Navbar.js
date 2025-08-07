@@ -46,10 +46,10 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
           
           {/* Action Buttons */}
           <div className="navbar-actions">
-            <button className="btn btn-buy" onClick={() => window.open('https://birdeye.so/token/YOUR_SOLANA_TOKEN_ADDRESS_HERE', '_blank')}>
+            <button className="btn btn-buy" onClick={() => window.open('https://birdeye.so/token/ESBCnCXtEZDmX8QnHU6qMZXd9mvjSAZVoYaLKKADBAGS', '_blank')}>
               Buy $GROOM
             </button>
-            <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomtoken', '_blank')}>
+            <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
               FOLLOW X
             </button>
           </div>
@@ -100,10 +100,10 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
                 
                 {/* Mobile Action Buttons */}
                 <div className="mobile-actions">
-                  <button className="btn btn-buy" onClick={() => window.open('https://birdeye.so/token/YOUR_SOLANA_TOKEN_ADDRESS_HERE', '_blank')}>
+                  <button className="btn btn-buy" onClick={() => window.open('https://birdeye.so/token/ESBCnCXtEZDmX8QnHU6qMZXd9mvjSAZVoYaLKKADBAGS', '_blank')}>
                     Buy $GROOM
                   </button>
-                  <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomtoken', '_blank')}>
+                  <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
                     FOLLOW X
                   </button>
                 </div>
