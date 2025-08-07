@@ -187,7 +187,7 @@ async function getTokenMetrics(mint) {
 
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
-  const mint = "3ofiPaQdD6GcspNXSk6xQqB1wzEtJALikfcSmeqqBAGS"; // GROOM token
+  const mint = "ESBCnCXtEZDmX8QnHU6qMZXd9mvjSAZVoYaLKKADBAGS"; // GROOM token
   
   // Bags.fm API endpoints for lifetime fees (official endpoint first)
   const possibleBagsEndpoints = [
