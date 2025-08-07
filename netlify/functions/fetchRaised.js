@@ -72,76 +72,112 @@ async function getSolPrice() {
   }
 }
 
-// Function to fetch real token metrics from Jupiter API
+// Function to fetch real token metrics from multiple APIs
 async function getTokenMetrics(mint) {
   try {
-    console.log('Fetching real token metrics from Jupiter API...');
+    console.log('Fetching real token metrics from multiple APIs...');
     
-    // Jupiter API endpoint for token price
-    const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
-    
-    const response = await fetch(jupiterUrl, {
-      headers: {
-        'User-Agent': 'GROOM-Wedding-App/1.0'
+    // Try multiple APIs in order of preference
+    const apis = [
+      {
+        name: 'Birdeye',
+        url: `https://public-api.birdeye.so/public/price?address=${mint}`,
+        parse: (data) => {
+          if (data.success && data.data) {
+            return {
+              price: data.data.value,
+              volume: data.data.volume24h || 0,
+              marketCap: data.data.marketCap || 0
+            };
+          }
+          return null;
+        }
+      },
+      {
+        name: 'Jupiter',
+        url: `https://price.jup.ag/v4/price?ids=${mint}`,
+        parse: (data) => {
+          const tokenData = data.data[mint];
+          if (tokenData) {
+            return {
+              price: tokenData.price,
+              volume: tokenData.volume24h || 0,
+              marketCap: tokenData.price * 1000000000 // Estimate with 1B supply
+            };
+          }
+          return null;
+        }
+      },
+      {
+        name: 'Dexscreener',
+        url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
+        parse: (data) => {
+          const pairs = data.pairs;
+          if (pairs && pairs.length > 0) {
+            const pair = pairs[0];
+            return {
+              price: parseFloat(pair.priceUsd) || 0,
+              volume: parseFloat(pair.volume24h) || 0,
+              marketCap: parseFloat(pair.marketCap) || 0
+            };
+          }
+          return null;
+        }
+      },
+      {
+        name: 'Raydium',
+        url: `https://api.raydium.io/v2/sdk/liquidity/mainnet/${mint}`,
+        parse: (data) => {
+          if (data && data.price) {
+            return {
+              price: data.price,
+              volume: data.volume24h || 0,
+              marketCap: data.marketCap || 0
+            };
+          }
+          return null;
+        }
       }
-    });
+    ];
     
-    if (response.ok) {
-      const data = await response.json();
-      const tokenData = data.data[mint];
-      
-      if (tokenData) {
-        console.log('✅ Jupiter API response:', JSON.stringify(tokenData, null, 2));
+    for (const api of apis) {
+      try {
+        console.log(`Trying ${api.name} API...`);
         
-        const price = tokenData.price;
-        const volume24h = tokenData.volume24h || 0;
+        const response = await fetch(api.url, {
+          headers: {
+            'User-Agent': 'GROOM-Wedding-App/1.0'
+          }
+        });
         
-        // Calculate market cap (we'll need circulating supply)
-        // For now, we'll estimate based on price and use a reasonable supply
-        const estimatedSupply = 1000000000; // 1B tokens (adjust as needed)
-        const marketCap = price * estimatedSupply;
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`${api.name} API response:`, JSON.stringify(data, null, 2));
+          
+          const parsed = api.parse(data);
+          if (parsed && parsed.price > 0) {
+            console.log(`✅ ${api.name} API success:`, parsed);
+            return {
+              price: parsed.price,
+              volume: parsed.volume,
+              marketCap: parsed.marketCap,
+              success: true,
+              source: `${api.name} API`
+            };
+          }
+        }
         
-        return {
-          price: price,
-          volume: volume24h,
-          marketCap: marketCap,
-          success: true,
-          source: 'Jupiter API'
-        };
+        console.log(`❌ ${api.name} API failed`);
+      } catch (error) {
+        console.log(`❌ ${api.name} API error: ${error.message}`);
       }
     }
     
-    console.log('❌ Jupiter API failed, trying Dexscreener...');
-    
-    // Fallback to Dexscreener API
-    const dexscreenerUrl = `https://api.dexscreener.com/latest/dex/tokens/${mint}`;
-    
-    const dexscreenerResponse = await fetch(dexscreenerUrl, {
-      headers: {
-        'User-Agent': 'GROOM-Wedding-App/1.0'
-      }
-    });
-    
-    if (dexscreenerResponse.ok) {
-      const dexscreenerData = await dexscreenerResponse.json();
-      const pairs = dexscreenerData.pairs;
-      
-      if (pairs && pairs.length > 0) {
-        const pair = pairs[0]; // Get the first pair (usually the most liquid)
-        console.log('✅ Dexscreener API response:', JSON.stringify(pair, null, 2));
-        
-        return {
-          price: parseFloat(pair.priceUsd) || 0,
-          volume: parseFloat(pair.volume24h) || 0,
-          marketCap: parseFloat(pair.marketCap) || 0,
-          success: true,
-          source: 'Dexscreener API'
-        };
-      }
-    }
-    
-    console.log('❌ Both Jupiter and Dexscreener APIs failed');
-    return { success: false };
+    console.log('❌ All token metrics APIs failed');
+    return { 
+      success: false, 
+      error: 'All token metrics APIs failed - token may not be listed yet' 
+    };
     
   } catch (error) {
     console.log(`❌ Error fetching token metrics: ${error.message}`);
@@ -258,35 +294,28 @@ exports.handler = async function (event, context) {
     // Fetch real token metrics (price, market cap, volume)
     const tokenMetrics = await getTokenMetrics(mint);
     
-    // Use real metrics if available, otherwise fall back to demo data
-    const demoData = generateDemoData();
+    // Only use real data - no demo fallbacks
+    if (!tokenMetrics.success) {
+      throw new Error(`Failed to fetch token metrics: ${tokenMetrics.error || 'Unknown error'}`);
+    }
     
-    const finalMetrics = {
-      price: tokenMetrics.success ? formatPrice(tokenMetrics.price) : demoData.price,
-      marketCap: tokenMetrics.success ? formatCurrency(tokenMetrics.marketCap) : demoData.marketCap,
-      volume: tokenMetrics.success ? formatCurrency(tokenMetrics.volume) : demoData.volume,
-      holders: demoData.holders, // Keep demo data for holders (not available in most APIs)
-      isRealMetrics: tokenMetrics.success,
-      metricsSource: tokenMetrics.source || 'Demo Data'
-    };
-    
-    // Format response with real lifetime fees and real/demo other metrics
+    // Format response with ONLY real data
     const formattedData = {
-      totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : demoData.totalRaised,
-      totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
-      solPrice: solPrice, // Include current SOL price in response
+      totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : 'Error: No lifetime fees data',
+      totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : 'Error: No SOL data',
+      solPrice: solPrice,
       lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
-      lifetimeFeesLamports: lifetimeFeesLamports, // Keep original string format
-      price: finalMetrics.price,
-      marketCap: finalMetrics.marketCap,
-      volume: finalMetrics.volume,
-      holders: finalMetrics.holders,
+      lifetimeFeesLamports: lifetimeFeesLamports,
+      price: formatPrice(tokenMetrics.price),
+      marketCap: formatCurrency(tokenMetrics.marketCap),
+      volume: formatCurrency(tokenMetrics.volume),
+      holders: 'N/A', // Not available from most APIs
       lastUpdated: new Date().toISOString(),
       success: true,
-      source: lifetimeFeesSOL > 0 ? `Bags.fm Lifetime Fees API` : 'Demo Data (Bags.fm API unavailable)',
+      source: `Bags.fm Lifetime Fees + ${tokenMetrics.source}`,
       isRealLifetimeFees: lifetimeFeesSOL > 0,
-      isRealMetrics: finalMetrics.isRealMetrics,
-      metricsSource: finalMetrics.metricsSource,
+      isRealMetrics: true,
+      metricsSource: tokenMetrics.source,
       workingEndpoint: workingEndpoint,
       apiSuccess: data.success || false,
       rawApiResponse: data
@@ -303,40 +332,20 @@ exports.handler = async function (event, context) {
   } catch (err) {
     console.error('Error in fetchRaised function:', err);
     
-    // Get SOL price even if Bags.fm fails
-    const solPrice = await getSolPrice();
-    
-    // Try to get real token metrics even if Bags.fm fails
-    const tokenMetrics = await getTokenMetrics(mint);
-    
-    // Return demo data if anything fails
-    const demoData = generateDemoData();
-    
-    const finalMetrics = {
-      price: tokenMetrics.success ? formatPrice(tokenMetrics.price) : demoData.price,
-      marketCap: tokenMetrics.success ? formatCurrency(tokenMetrics.marketCap) : demoData.marketCap,
-      volume: tokenMetrics.success ? formatCurrency(tokenMetrics.volume) : demoData.volume,
-      holders: demoData.holders,
-      isRealMetrics: tokenMetrics.success,
-      metricsSource: tokenMetrics.source || 'Demo Data'
-    };
-    
+    // Return error response - no demo data
     return {
-      statusCode: 200,
+      statusCode: 500,
       headers: {
         ...headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        ...finalMetrics,
-        totalRaised: demoData.totalRaised,
-        totalRaisedSOL: `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
-        solPrice: solPrice, // Include current SOL price
         success: false,
         error: err.message,
-        isDemoData: true,
+        note: 'All APIs failed - no real data available',
+        lastUpdated: new Date().toISOString(),
         isRealLifetimeFees: false,
-        note: 'Demo data due to error'
+        isRealMetrics: false
       })
     };
   }
@@ -375,22 +384,4 @@ function formatPrice(value) {
   }
 }
 
-// Generate realistic demo data with growing trend
-function generateDemoData() {
-  // Simulate a growing token with realistic progression
-  const timeFactor = Date.now() / 1000000; // Creates a slow upward trend
-  const baseTotalRaised = 4800 + (timeFactor % 1000) + Math.random() * 500; // $4800-$6300
-  const baseVolume = 12000 + (timeFactor % 3000) + Math.random() * 2000; // $12000-$17000
-  const basePrice = 0.0015 + (timeFactor % 0.0005) + Math.random() * 0.0002; // $0.0015-$0.0022
-  const baseMarketCap = 75000 + (timeFactor % 15000) + Math.random() * 10000; // $75000-$100000
-  const baseHolders = 180 + Math.floor((timeFactor % 30) + Math.random() * 20); // 180-230 holders
-  
-  return {
-    totalRaised: formatCurrency(baseTotalRaised),
-    marketCap: formatCurrency(baseMarketCap),
-    price: formatPrice(basePrice),
-    volume: formatCurrency(baseVolume),
-    holders: baseHolders,
-    lastUpdated: new Date().toISOString()
-  };
-} 
+ 
