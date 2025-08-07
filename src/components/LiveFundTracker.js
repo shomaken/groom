@@ -58,14 +58,28 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   const getTotalRaisedNumber = () => {
     if (!tokenData.success || !tokenData.isRealLifetimeFees) return 0;
     
-    // Extract number from string like "$4,800.80" or "Error: No data available"
+    // Extract number from string like "$53.2K" or "$4,800.80" or "Error: No data available"
     const totalRaisedStr = tokenData.totalRaised;
     if (totalRaisedStr.includes('Error') || totalRaisedStr === 'Loading...') return 0;
     
     // Remove "$" and "," and convert to number
-    const cleanAmount = totalRaisedStr.replace(/[$,]/g, '');
+    let cleanAmount = totalRaisedStr.replace(/[$,]/g, '');
+    
+    // Handle K (thousands), M (millions), B (billions) suffixes
+    let multiplier = 1;
+    if (cleanAmount.includes('K')) {
+      multiplier = 1000;
+      cleanAmount = cleanAmount.replace('K', '');
+    } else if (cleanAmount.includes('M')) {
+      multiplier = 1000000;
+      cleanAmount = cleanAmount.replace('M', '');
+    } else if (cleanAmount.includes('B')) {
+      multiplier = 1000000000;
+      cleanAmount = cleanAmount.replace('B', '');
+    }
+    
     const amount = parseFloat(cleanAmount);
-    return isNaN(amount) ? 0 : amount;
+    return isNaN(amount) ? 0 : amount * multiplier;
   };
 
   const getMilestoneProgress = (milestoneAmount) => {
