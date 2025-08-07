@@ -228,32 +228,47 @@ exports.handler = async function (event, context) {
     let data = null;
     let workingEndpoint = null;
     
-    for (const endpoint of possibleBagsEndpoints) {
-      try {
-        console.log(`Testing endpoint: ${endpoint}`);
-        
-        const res = await fetch(endpoint, {
-          headers: {
-            'x-api-key': API_KEY,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log(`Status for ${endpoint}: ${res.status}`);
-
-        if (res.ok) {
-          data = await res.json();
-          workingEndpoint = endpoint;
-          console.log(`✅ SUCCESS! Working endpoint found: ${endpoint}`);
-          console.log('Response data:', JSON.stringify(data, null, 2));
-          break;
-        } else {
-          const errorText = await res.text();
-          console.log(`❌ Failed ${endpoint}: ${res.status} - ${errorText.substring(0, 100)}...`);
-        }
-      } catch (error) {
-        console.log(`❌ Error ${endpoint}: ${error.message}`);
+    // Retry logic for transient failures
+    const maxRetries = 2;
+    let retryCount = 0;
+    
+    while (retryCount <= maxRetries && !data) {
+      if (retryCount > 0) {
+        console.log(`🔄 Retry attempt ${retryCount}/${maxRetries}...`);
+        // Wait 1 second before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
+      
+      for (const endpoint of possibleBagsEndpoints) {
+        try {
+          console.log(`Testing endpoint: ${endpoint}`);
+          
+          const res = await fetch(endpoint, {
+            headers: {
+              'x-api-key': API_KEY,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+          });
+
+          console.log(`Status for ${endpoint}: ${res.status}`);
+
+          if (res.ok) {
+            data = await res.json();
+            workingEndpoint = endpoint;
+            console.log(`✅ SUCCESS! Working endpoint found: ${endpoint}`);
+            console.log('Response data:', JSON.stringify(data, null, 2));
+            break;
+          } else {
+            const errorText = await res.text();
+            console.log(`❌ Failed ${endpoint}: ${res.status} - ${errorText.substring(0, 100)}...`);
+          }
+        } catch (error) {
+          console.log(`❌ Error ${endpoint}: ${error.message}`);
+        }
+      }
+      
+      retryCount++;
     }
 
     if (!data) {
@@ -269,6 +284,12 @@ exports.handler = async function (event, context) {
     const lifetimeFeesLamports = data.response || data.lifetimeFees || data.fees || '0';
     console.log('Raw lifetime fees (lamports string):', lifetimeFeesLamports);
     
+    // Validate the lamports data
+    if (!lifetimeFeesLamports || lifetimeFeesLamports === '0' || lifetimeFeesLamports === 'null') {
+      console.log('❌ No lifetime fees data available - token may not have collected fees yet');
+      throw new Error('No lifetime fees data available - token may not have collected fees yet');
+    }
+    
     // Convert lamports string to SOL
     const LAMPORTS_PER_SOL = 1000000000;
     let lifetimeFeesSOL = 0;
@@ -278,9 +299,15 @@ exports.handler = async function (event, context) {
       const lamportsValue = BigInt(lifetimeFeesLamports);
       lifetimeFeesSOL = Number(lamportsValue) / LAMPORTS_PER_SOL;
       console.log(`Converted ${lifetimeFeesLamports} lamports to ${lifetimeFeesSOL} SOL`);
+      
+      // Validate the converted value
+      if (lifetimeFeesSOL <= 0 || isNaN(lifetimeFeesSOL)) {
+        console.log('❌ Invalid lifetime fees value after conversion');
+        throw new Error('Invalid lifetime fees value after conversion');
+      }
     } catch (error) {
       console.log('Error parsing lamports value:', error.message);
-      lifetimeFeesSOL = 0;
+      throw new Error(`Failed to parse lifetime fees: ${error.message}`);
     }
     
     console.log(`Lifetime fees: ${lifetimeFeesSOL} SOL`);
@@ -301,8 +328,8 @@ exports.handler = async function (event, context) {
     
     // Format response with ONLY real data
     const formattedData = {
-      totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : 'Error: No lifetime fees data',
-      totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : 'Error: No SOL data',
+      totalRaised: formatCurrency(lifetimeFeesUSD),
+      totalRaisedSOL: `${lifetimeFeesSOL.toFixed(4)} SOL`,
       solPrice: solPrice,
       lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
       lifetimeFeesLamports: lifetimeFeesLamports,
@@ -313,7 +340,7 @@ exports.handler = async function (event, context) {
       lastUpdated: new Date().toISOString(),
       success: true,
       source: `Bags.fm Lifetime Fees + ${tokenMetrics.source}`,
-      isRealLifetimeFees: lifetimeFeesSOL > 0,
+      isRealLifetimeFees: true,
       isRealMetrics: true,
       metricsSource: tokenMetrics.source,
       workingEndpoint: workingEndpoint,
@@ -334,7 +361,7 @@ exports.handler = async function (event, context) {
     
     // Return error response - no demo data
     return {
-      statusCode: 500,
+      statusCode: 200, // Return 200 to avoid frontend errors, but with error data
       headers: {
         ...headers,
         'Content-Type': 'application/json'
@@ -342,10 +369,16 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({
         success: false,
         error: err.message,
-        note: 'All APIs failed - no real data available',
+        totalRaised: `Error: ${err.message}`,
+        totalRaisedSOL: `Error: ${err.message}`,
+        price: 'Error',
+        marketCap: 'Error',
+        volume: 'Error',
+        holders: 'Error',
         lastUpdated: new Date().toISOString(),
         isRealLifetimeFees: false,
-        isRealMetrics: false
+        isRealMetrics: false,
+        note: 'API temporarily unavailable - please refresh to retry'
       })
     };
   }
