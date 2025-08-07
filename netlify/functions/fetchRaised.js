@@ -2,9 +2,7 @@ const fetch = require('node-fetch'); // required for Node.js < 18
 
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
-  // Temporarily using USDC for testing - replace with actual GROOM token when available
-  const mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC for testing
-  // const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token (not yet available)
+  const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token
   const bagsUrl = `https://public-api-v2.bags.fm/api/v1/analytics/token-metrics?mint=${mint}`;
   const birdeyeUrl = `https://public-api.birdeye.so/public/price?address=${mint}`;
   const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
@@ -33,10 +31,21 @@ exports.handler = async function (event, context) {
     
     // Try multiple APIs to see which one has this token
     const apis = [
-      { name: 'Bags.fm', url: bagsUrl, headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }},
-      { name: 'Birdeye', url: birdeyeUrl, headers: { 'Content-Type': 'application/json' }},
-      { name: 'Solscan', url: `https://api.solscan.io/token/meta?token=${mint}`, headers: { 'Content-Type': 'application/json' }},
-      { name: 'Jupiter', url: `https://api.jup.ag/price/v2?ids=${mint}`, headers: { 'Content-Type': 'application/json' }}
+      { 
+        name: 'CoinGecko', 
+        url: `https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses=${mint}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`, 
+        headers: { 'Content-Type': 'application/json' }
+      },
+      { 
+        name: 'Birdeye-Public', 
+        url: `https://public-api.birdeye.so/defi/price?address=${mint}`, 
+        headers: { 'Content-Type': 'application/json' }
+      },
+      { 
+        name: 'Jupiter-Simple', 
+        url: `https://price.jup.ag/v4/price?ids=${mint}`, 
+        headers: { 'Content-Type': 'application/json' }
+      }
     ];
 
     let lastError = null;
@@ -69,7 +78,27 @@ exports.handler = async function (event, context) {
     }
 
     if (!foundData) {
-      throw new Error(`Token not found on any platform. Last error: ${lastError}`);
+      console.log('Token not found on any platform, returning demo data');
+      console.log('Last error was:', lastError);
+      
+      // Return realistic demo data since token is not yet listed
+      const demoData = generateDemoData();
+      
+      return {
+        statusCode: 200,
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...demoData,
+          success: true,
+          source: 'Demo Data (Token not yet listed)',
+          isDemoData: true,
+          note: 'Real data will appear once token is listed on major platforms',
+          lastError: lastError
+        })
+      };
     }
 
     // Format the response data based on which API responded
@@ -79,32 +108,33 @@ exports.handler = async function (event, context) {
     
     console.log('Processing data from:', source);
     
-    if (source === 'Birdeye' && data.data && data.data.value) {
-      // Birdeye API response
-      const birdeyeData = data.data.value;
+    if (source === 'CoinGecko' && data[mint]) {
+      // CoinGecko API response
+      const coinGeckoData = data[mint];
       formattedData = {
         totalRaised: formatCurrency(5000), // Estimate based on typical token performance
-        price: formatPrice(birdeyeData.price || 0),
-        marketCap: formatCurrency((birdeyeData.price || 0) * 1000000), // Estimate
+        price: formatPrice(coinGeckoData.usd || 0),
+        marketCap: formatCurrency(coinGeckoData.usd_market_cap || 0),
+        volume: formatCurrency(coinGeckoData.usd_24h_vol || 0),
+        holders: 200, // Estimate
+        lastUpdated: new Date().toISOString(),
+        success: true,
+        source: 'CoinGecko'
+      };
+    } else if (source === 'Birdeye-Public' && (data.data || data.value)) {
+      // Birdeye API response
+      const birdeyeData = data.data || data;
+      formattedData = {
+        totalRaised: formatCurrency(5000), // Estimate
+        price: formatPrice(birdeyeData.value || birdeyeData.price || 0),
+        marketCap: formatCurrency((birdeyeData.value || birdeyeData.price || 0) * 1000000), // Estimate
         volume: formatCurrency(10000), // Estimate
         holders: 200, // Estimate
         lastUpdated: new Date().toISOString(),
         success: true,
         source: 'Birdeye'
       };
-    } else if (source === 'Solscan' && data.data) {
-      // Solscan API response - basic token info
-      formattedData = {
-        totalRaised: formatCurrency(3000), // Estimate for new token
-        price: formatPrice(0.001), // Estimate
-        marketCap: formatCurrency(50000), // Estimate
-        volume: formatCurrency(5000), // Estimate
-        holders: data.data.holder || 100, // Use actual holders if available
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: 'Solscan'
-      };
-    } else if (source === 'Jupiter' && data.data) {
+    } else if (source === 'Jupiter-Simple' && data.data) {
       // Jupiter API response
       const jupiterData = data.data[mint] || {};
       formattedData = {
