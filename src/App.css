@@ -30,6 +30,23 @@ body {
   --border-light: #D9CFC2;
 }
 
+/* Silk background styling */
+.silk-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+}
+
+
+
+
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Playfair Display', serif;
@@ -98,6 +115,7 @@ p {
 
 /* Open Card Container */
 .open-card-container {
+  position: relative;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -106,11 +124,12 @@ p {
 
 /* Page Container */
 .page-container {
-  background: var(--white);
+  background: rgba(255, 255, 255, 1.0);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   position: relative;
+  z-index: 10;
 }
 
 .page-navigation {
