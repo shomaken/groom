@@ -1,5 +1,77 @@
 const fetch = require('node-fetch'); // required for Node.js < 18
 
+// Cache for SOL price to avoid excessive API calls
+let solPriceCache = {
+  price: 170, // fallback price
+  lastUpdated: 0,
+  cacheDuration: 60 * 60 * 1000 // 1 hour in milliseconds
+};
+
+// Function to fetch current SOL price
+async function getSolPrice() {
+  const now = Date.now();
+  
+  // Return cached price if it's still valid (less than 1 hour old)
+  if (now - solPriceCache.lastUpdated < solPriceCache.cacheDuration) {
+    console.log(`Using cached SOL price: $${solPriceCache.price}`);
+    return solPriceCache.price;
+  }
+  
+  try {
+    console.log('Fetching fresh SOL price...');
+    
+    // Try multiple SOL price APIs for reliability
+    const priceApis = [
+      'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd',
+      'https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT',
+      'https://api.coinbase.com/v2/prices/SOL-USD/spot'
+    ];
+    
+    for (const apiUrl of priceApis) {
+      try {
+        const response = await fetch(apiUrl, {
+          headers: {
+            'User-Agent': 'GROOM-Wedding-App/1.0'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          let solPrice = null;
+          
+          // Parse different API response formats
+          if (apiUrl.includes('coingecko')) {
+            solPrice = data.solana?.usd;
+          } else if (apiUrl.includes('binance')) {
+            solPrice = parseFloat(data.price);
+          } else if (apiUrl.includes('coinbase')) {
+            solPrice = parseFloat(data.data.amount);
+          }
+          
+          if (solPrice && solPrice > 0) {
+            // Update cache
+            solPriceCache.price = solPrice;
+            solPriceCache.lastUpdated = now;
+            
+            console.log(`✅ SOL price updated: $${solPrice} from ${apiUrl.split('/')[2]}`);
+            return solPrice;
+          }
+        }
+      } catch (error) {
+        console.log(`❌ Failed to fetch SOL price from ${apiUrl.split('/')[2]}: ${error.message}`);
+      }
+    }
+    
+    // If all APIs fail, use cached price or fallback
+    console.log(`⚠️ All SOL price APIs failed, using cached price: $${solPriceCache.price}`);
+    return solPriceCache.price;
+    
+  } catch (error) {
+    console.log(`❌ Error fetching SOL price: ${error.message}`);
+    return solPriceCache.price; // Return cached or fallback price
+  }
+}
+
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
   const mint = "3ofiPaQdD6GcspNXSk6xQqB1wzEtJALikfcSmeqqBAGS"; // GROOM token
@@ -100,9 +172,11 @@ exports.handler = async function (event, context) {
     
     console.log(`Lifetime fees: ${lifetimeFeesSOL} SOL`);
     
-    // Estimate USD value (SOL price ~$200)
-    const solPrice = 200;
+    // Get current SOL price (cached for 1 hour)
+    const solPrice = await getSolPrice();
     const lifetimeFeesUSD = lifetimeFeesSOL * solPrice;
+    
+    console.log(`SOL price: $${solPrice}, USD value: $${lifetimeFeesUSD.toFixed(2)}`);
     
     // Generate demo data for other metrics
     const demoData = generateDemoData();
@@ -111,6 +185,7 @@ exports.handler = async function (event, context) {
     const formattedData = {
       totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : demoData.totalRaised,
       totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
+      solPrice: solPrice, // Include current SOL price in response
       lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
       lifetimeFeesLamports: lifetimeFeesLamports, // Keep original string format
       price: demoData.price, // Demo data
@@ -137,6 +212,9 @@ exports.handler = async function (event, context) {
   } catch (err) {
     console.error('Error in fetchRaised function:', err);
     
+    // Get SOL price even if Bags.fm fails
+    const solPrice = await getSolPrice();
+    
     // Return demo data if anything fails
     const demoData = generateDemoData();
     
@@ -148,6 +226,7 @@ exports.handler = async function (event, context) {
       },
       body: JSON.stringify({
         ...demoData,
+        solPrice: solPrice, // Include current SOL price
         success: false,
         error: err.message,
         isDemoData: true,
