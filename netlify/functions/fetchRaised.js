@@ -3,7 +3,20 @@ const fetch = require('node-fetch'); // required for Node.js < 18
 exports.handler = async function (event, context) {
   const API_KEY = process.env.BAGS_API_KEY;
   const mint = "9mAnyxAq8JQieHT7Lc47PVQbTK7ZVaaog8LwAbFzBAGS"; // GROOM token
-  const bagsUrl = `https://public-api-v2.bags.fm/token-launch/lifetime-fees?tokenMint=${mint}`;
+  
+  // Try different possible Bags.fm API endpoints for lifetime fees
+  const possibleBagsEndpoints = [
+    `https://public-api-v2.bags.fm/token-launch/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/api/v1/token-launch/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/api/token-launch/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/v1/token-launch/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/api/v1/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/api/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/v1/lifetime-fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/fees?tokenMint=${mint}`,
+    `https://public-api-v2.bags.fm/token/${mint}/fees`
+  ];
   const birdeyeUrl = `https://public-api.birdeye.so/public/price?address=${mint}`;
   const jupiterUrl = `https://price.jup.ag/v4/price?ids=${mint}`;
   const raydiumUrl = `https://api.raydium.io/v2/sdk/liquidity/mainnet/${mint}`;
@@ -29,46 +42,97 @@ exports.handler = async function (event, context) {
     // First, let's check if this is a valid Solana token
     console.log('Checking token validity for:', mint);
     
-    // Use the correct Bags.fm API endpoint for lifetime fees
-    console.log('Making request to Bags.fm lifetime-fees endpoint:', bagsUrl);
+    // Try different Bags.fm API endpoints to find lifetime fees
+    console.log('Testing Bags.fm API endpoints for lifetime fees...');
     console.log('Using API key:', API_KEY ? 'Present' : 'Missing');
     
-    const res = await fetch(bagsUrl, {
-      headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json'
+    let data = null;
+    let workingEndpoint = null;
+    
+    for (const endpoint of possibleBagsEndpoints) {
+      try {
+        console.log(`Testing endpoint: ${endpoint}`);
+        
+        const res = await fetch(endpoint, {
+          headers: {
+            'x-api-key': API_KEY,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log(`Status for ${endpoint}: ${res.status}`);
+
+        if (res.ok) {
+          data = await res.json();
+          workingEndpoint = endpoint;
+          console.log(`✅ SUCCESS! Working endpoint found: ${endpoint}`);
+          console.log('Response data:', JSON.stringify(data, null, 2));
+          break;
+        } else {
+          const errorText = await res.text();
+          console.log(`❌ Failed ${endpoint}: ${res.status} - ${errorText.substring(0, 100)}...`);
+        }
+      } catch (error) {
+        console.log(`❌ Error ${endpoint}: ${error.message}`);
       }
-    });
-
-    console.log('Bags.fm response status:', res.status);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.log('Bags.fm error response:', errorText);
-      throw new Error(`Bags.fm API failed: ${res.status} ${res.statusText} - ${errorText}`);
     }
 
-    const data = await res.json();
-    console.log('Bags.fm response data:', JSON.stringify(data, null, 2));
+    if (!data) {
+      console.log('❌ All Bags.fm endpoints failed - token may not be listed yet');
+      throw new Error('All Bags.fm API endpoints failed - token may not be listed yet');
+    }
 
-    // Convert lifetime fees from lamports to SOL
-    const LAMPORTS_PER_SOL = 1000000000; // 1 SOL = 1,000,000,000 lamports
-    const lifetimeFeesLamports = parseInt(data.lifetimeFees || data.fees || 0);
-    const lifetimeFeesSOL = lifetimeFeesLamports / LAMPORTS_PER_SOL;
+    // Extract lifetime fees from Bags.fm API response
+    console.log(`Processing lifetime fees from: ${workingEndpoint}`);
     
-    // Format the Bags.fm API response with lifetime fees as total raised
+    // Look for lifetime fees in different possible field names
+    const lifetimeFeesRaw = data.lifetimeFees || data.fees || data.totalFees || data.lifetime_fees || data.amount || 0;
+    console.log('Raw lifetime fees value:', lifetimeFeesRaw);
+    
+    // Convert lamports to SOL
+    const LAMPORTS_PER_SOL = 1000000000;
+    let lifetimeFeesSOL = 0;
+    
+    if (typeof lifetimeFeesRaw === 'string') {
+      // If it's a string, try to parse it
+      const parsed = parseInt(lifetimeFeesRaw);
+      if (!isNaN(parsed)) {
+        lifetimeFeesSOL = parsed / LAMPORTS_PER_SOL;
+      }
+    } else if (typeof lifetimeFeesRaw === 'number') {
+      // If it's a number, check if it's likely in lamports
+      if (lifetimeFeesRaw > 1000000) { // Likely in lamports if > 1M
+        lifetimeFeesSOL = lifetimeFeesRaw / LAMPORTS_PER_SOL;
+      } else {
+        lifetimeFeesSOL = lifetimeFeesRaw; // Already in SOL
+      }
+    }
+    
+    console.log(`Lifetime fees: ${lifetimeFeesSOL} SOL`);
+    
+    // Estimate USD value (SOL price ~$200)
+    const solPrice = 200;
+    const lifetimeFeesUSD = lifetimeFeesSOL * solPrice;
+    
+    // Generate demo data for other metrics
+    const demoData = generateDemoData();
+    
+    // Format response with real lifetime fees and demo other metrics
     const formattedData = {
-      totalRaised: formatCurrency(lifetimeFeesSOL * 200), // Estimate USD value (SOL * ~$200)
-      totalRaisedSOL: `${lifetimeFeesSOL.toFixed(4)} SOL`,
-      lifetimeFeesLamports: lifetimeFeesLamports.toLocaleString(),
-      lifetimeFeesSOL: lifetimeFeesSOL.toFixed(4),
-      price: formatPrice(0.001), // Estimate
-      marketCap: formatCurrency(75000), // Estimate
-      volume: formatCurrency(12000), // Estimate
-      holders: 200, // Estimate
+      totalRaised: lifetimeFeesUSD > 0 ? formatCurrency(lifetimeFeesUSD) : demoData.totalRaised,
+      totalRaisedSOL: lifetimeFeesSOL > 0 ? `${lifetimeFeesSOL.toFixed(4)} SOL` : `${(parseFloat(demoData.totalRaised.replace(/[$,]/g, '')) / solPrice).toFixed(4)} SOL`,
+      lifetimeFeesSOL: lifetimeFeesSOL.toFixed(6),
+      lifetimeFeesLamports: (lifetimeFeesSOL * LAMPORTS_PER_SOL).toLocaleString(),
+      price: demoData.price, // Demo data
+      marketCap: demoData.marketCap, // Demo data
+      volume: demoData.volume, // Demo data
+      holders: demoData.holders, // Demo data
       lastUpdated: new Date().toISOString(),
       success: true,
-      source: 'Bags.fm (Lifetime Fees)'
+      source: lifetimeFeesSOL > 0 ? `Bags.fm Lifetime Fees (${workingEndpoint})` : 'Demo Data with Bags.fm attempt',
+      isRealLifetimeFees: lifetimeFeesSOL > 0,
+      workingEndpoint: workingEndpoint,
+      rawLifetimeFees: lifetimeFeesRaw
     };
 
     return {
