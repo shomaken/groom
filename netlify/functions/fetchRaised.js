@@ -77,8 +77,40 @@ async function getTokenMetrics(mint) {
   try {
     console.log('Fetching real token metrics from multiple APIs...');
     
-    // Try multiple APIs in order of preference
+    // Try multiple APIs in order of preference - Dexscreener first for volume
     const apis = [
+      {
+        name: 'Dexscreener',
+        url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
+        parse: (data) => {
+          const pairs = data.pairs;
+          if (pairs && pairs.length > 0) {
+            const pair = pairs[0];
+            return {
+              price: parseFloat(pair.priceUsd) || 0,
+              volume: parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0,
+              marketCap: parseFloat(pair.marketCap) || 0
+            };
+          }
+          return null;
+        }
+      },
+      {
+        name: 'Dexscreener Search',
+        url: `https://api.dexscreener.com/latest/dex/search?q=${mint}`,
+        parse: (data) => {
+          const pairs = data.pairs;
+          if (pairs && pairs.length > 0) {
+            const pair = pairs[0];
+            return {
+              price: parseFloat(pair.priceUsd) || 0,
+              volume: parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0,
+              marketCap: parseFloat(pair.marketCap) || 0
+            };
+          }
+          return null;
+        }
+      },
       {
         name: 'Birdeye',
         url: `https://public-api.birdeye.so/public/price?address=${mint}`,
@@ -118,22 +150,6 @@ async function getTokenMetrics(mint) {
               price: tokenData.price,
               volume: tokenData.volume24h || tokenData.volume || 0,
               marketCap: tokenData.price * 1000000000 // Estimate with 1B supply
-            };
-          }
-          return null;
-        }
-      },
-      {
-        name: 'Dexscreener',
-        url: `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
-        parse: (data) => {
-          const pairs = data.pairs;
-          if (pairs && pairs.length > 0) {
-            const pair = pairs[0];
-            return {
-              price: parseFloat(pair.priceUsd) || 0,
-              volume: parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0,
-              marketCap: parseFloat(pair.marketCap) || 0
             };
           }
           return null;
@@ -194,38 +210,6 @@ async function getTokenMetrics(mint) {
     }
     
     console.log('❌ All token metrics APIs failed');
-    
-    // Try one more specific volume endpoint as fallback
-    try {
-      console.log('🔄 Trying fallback volume endpoint...');
-      const fallbackUrl = `https://api.dexscreener.com/latest/dex/search?q=${mint}`;
-      const fallbackResponse = await fetch(fallbackUrl, {
-        headers: {
-          'User-Agent': 'GROOM-Wedding-App/1.0'
-        }
-      });
-      
-      if (fallbackResponse.ok) {
-        const fallbackData = await fallbackResponse.json();
-        console.log('Fallback API response:', JSON.stringify(fallbackData, null, 2));
-        
-        if (fallbackData.pairs && fallbackData.pairs.length > 0) {
-          const pair = fallbackData.pairs[0];
-          const volume = parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0;
-          console.log(`✅ Fallback volume found: ${formatCurrency(volume)}`);
-          return {
-            price: parseFloat(pair.priceUsd) || 0,
-            volume: volume,
-            marketCap: parseFloat(pair.marketCap) || 0,
-            success: true,
-            source: 'Dexscreener Fallback API'
-          };
-        }
-      }
-    } catch (fallbackError) {
-      console.log('❌ Fallback volume API also failed:', fallbackError.message);
-    }
-    
     return { 
       success: false, 
       error: 'All token metrics APIs failed - token may not be listed yet' 
