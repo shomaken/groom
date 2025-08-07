@@ -29,152 +29,39 @@ exports.handler = async function (event, context) {
     // First, let's check if this is a valid Solana token
     console.log('Checking token validity for:', mint);
     
-    // Try multiple APIs to see which one has this token
-    const apis = [
-      { 
-        name: 'Bags.fm', 
-        url: bagsUrl, 
-        headers: { 
-          'x-api-key': API_KEY,
-          'Content-Type': 'application/json' 
-        }
-      },
-      { 
-        name: 'Birdeye-Public', 
-        url: `https://public-api.birdeye.so/defi/price?address=${mint}`, 
-        headers: { 'Content-Type': 'application/json' }
-      },
-      { 
-        name: 'CoinGecko', 
-        url: `https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses=${mint}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`, 
-        headers: { 'Content-Type': 'application/json' }
-      }
-    ];
-
-    let lastError = null;
-    let foundData = null;
-
-    for (const api of apis) {
-      try {
-        console.log(`Trying ${api.name} API:`, api.url);
-        const res = await fetch(api.url, { headers: api.headers });
-        console.log(`${api.name} response status:`, res.status);
-        
-        if (res.ok) {
-          const data = await res.json();
-          console.log(`${api.name} response:`, JSON.stringify(data, null, 2));
-          
-          // If we get valid data, format and return it
-          if (data && (data.success !== false)) {
-            foundData = { data, source: api.name };
-            break;
-          }
-        } else {
-          const errorText = await res.text();
-          console.log(`${api.name} error:`, errorText);
-          lastError = `${api.name}: ${res.status} ${res.statusText} - ${errorText}`;
-        }
-      } catch (error) {
-        console.log(`${api.name} request failed:`, error.message);
-        lastError = `${api.name}: ${error.message}`;
-      }
-    }
-
-    if (!foundData) {
-      console.log('Token not found on any platform, returning demo data');
-      console.log('Last error was:', lastError);
-      
-      // Return realistic demo data since token is not yet listed
-      const demoData = generateDemoData();
-      
-      return {
-        statusCode: 200,
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...demoData,
-          success: true,
-          source: 'Demo Data (Token not yet listed)',
-          isDemoData: true,
-          note: 'Real data will appear once token is listed on major platforms',
-          lastError: lastError
-        })
-      };
-    }
-
-    // Format the response data based on which API responded
-    const data = foundData.data;
-    const source = foundData.source;
-    let formattedData;
+    // Try Bags.fm API only
+    console.log('Making request to Bags.fm API:', bagsUrl);
+    console.log('Using API key:', API_KEY ? 'Present' : 'Missing');
     
-    console.log('Processing data from:', source);
-    
-    if (source === 'Bags.fm') {
-      // Bags.fm API response
-      formattedData = {
-        totalRaised: formatCurrency(data.response?.totalRaised || data.totalRaised || 5000),
-        price: formatPrice(data.response?.price || data.price || 0),
-        marketCap: formatCurrency(data.response?.marketCap || data.marketCap || data.fdv || 0),
-        volume: formatCurrency(data.response?.volume || data.volume || data.volume_24h || 0),
-        holders: data.response?.holders || data.holders || data.holder_count || 200,
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: 'Bags.fm'
-      };
-    } else if (source === 'CoinGecko' && data[mint]) {
-      // CoinGecko API response
-      const coinGeckoData = data[mint];
-      formattedData = {
-        totalRaised: formatCurrency(5000), // Estimate based on typical token performance
-        price: formatPrice(coinGeckoData.usd || 0),
-        marketCap: formatCurrency(coinGeckoData.usd_market_cap || 0),
-        volume: formatCurrency(coinGeckoData.usd_24h_vol || 0),
-        holders: 200, // Estimate
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: 'CoinGecko'
-      };
-    } else if (source === 'Birdeye-Public' && (data.data || data.value)) {
-      // Birdeye API response
-      const birdeyeData = data.data || data;
-      formattedData = {
-        totalRaised: formatCurrency(5000), // Estimate
-        price: formatPrice(birdeyeData.value || birdeyeData.price || 0),
-        marketCap: formatCurrency((birdeyeData.value || birdeyeData.price || 0) * 1000000), // Estimate
-        volume: formatCurrency(10000), // Estimate
-        holders: 200, // Estimate
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: 'Birdeye'
-      };
-    } else if (source === 'Jupiter-Simple' && data.data) {
-      // Jupiter API response
-      const jupiterData = data.data[mint] || {};
-      formattedData = {
-        totalRaised: formatCurrency(4000), // Estimate
-        price: formatPrice(jupiterData.price || 0.001),
-        marketCap: formatCurrency((jupiterData.price || 0.001) * 1000000), // Estimate
-        volume: formatCurrency(8000), // Estimate
-        holders: 150, // Estimate
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: 'Jupiter'
-      };
-    } else {
-      // Other API response or fallback
-      formattedData = {
-        totalRaised: formatCurrency(data.response?.totalRaised || data.totalRaised || 4000),
-        price: formatPrice(data.response?.price || data.price || 0.001),
-        marketCap: formatCurrency(data.response?.marketCap || data.marketCap || data.fdv || 60000),
-        volume: formatCurrency(data.response?.volume || data.volume || data.volume_24h || 7000),
-        holders: data.response?.holders || data.holders || data.holder_count || 180,
-        lastUpdated: new Date().toISOString(),
-        success: true,
-        source: source
-      };
+    const res = await fetch(bagsUrl, {
+      headers: {
+        'x-api-key': API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Bags.fm response status:', res.status);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.log('Bags.fm error response:', errorText);
+      throw new Error(`Bags.fm API failed: ${res.status} ${res.statusText} - ${errorText}`);
     }
+
+    const data = await res.json();
+    console.log('Bags.fm response data:', JSON.stringify(data, null, 2));
+
+    // Format the Bags.fm API response
+    const formattedData = {
+      totalRaised: formatCurrency(data.response?.totalRaised || data.totalRaised || 0),
+      price: formatPrice(data.response?.price || data.price || 0),
+      marketCap: formatCurrency(data.response?.marketCap || data.marketCap || data.fdv || 0),
+      volume: formatCurrency(data.response?.volume || data.volume || data.volume_24h || 0),
+      holders: data.response?.holders || data.holders || data.holder_count || 0,
+      lastUpdated: new Date().toISOString(),
+      success: true,
+      source: 'Bags.fm'
+    };
 
     return {
       statusCode: 200,
