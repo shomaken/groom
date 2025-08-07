@@ -86,8 +86,23 @@ async function getTokenMetrics(mint) {
           if (data.success && data.data) {
             return {
               price: data.data.value,
-              volume: data.data.volume24h || 0,
+              volume: data.data.volume24h || data.data.volume || 0,
               marketCap: data.data.marketCap || 0
+            };
+          }
+          return null;
+        }
+      },
+      {
+        name: 'Birdeye Volume',
+        url: `https://public-api.birdeye.so/public/tokenlist?address=${mint}`,
+        parse: (data) => {
+          if (data.success && data.data && data.data.length > 0) {
+            const token = data.data[0];
+            return {
+              price: token.price || 0,
+              volume: token.volume24h || token.volume || 0,
+              marketCap: token.marketCap || 0
             };
           }
           return null;
@@ -101,7 +116,7 @@ async function getTokenMetrics(mint) {
           if (tokenData) {
             return {
               price: tokenData.price,
-              volume: tokenData.volume24h || 0,
+              volume: tokenData.volume24h || tokenData.volume || 0,
               marketCap: tokenData.price * 1000000000 // Estimate with 1B supply
             };
           }
@@ -117,7 +132,7 @@ async function getTokenMetrics(mint) {
             const pair = pairs[0];
             return {
               price: parseFloat(pair.priceUsd) || 0,
-              volume: parseFloat(pair.volume24h) || 0,
+              volume: parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0,
               marketCap: parseFloat(pair.marketCap) || 0
             };
           }
@@ -131,7 +146,7 @@ async function getTokenMetrics(mint) {
           if (data && data.price) {
             return {
               price: data.price,
-              volume: data.volume24h || 0,
+              volume: data.volume24h || data.volume || 0,
               marketCap: data.marketCap || 0
             };
           }
@@ -156,7 +171,12 @@ async function getTokenMetrics(mint) {
           
           const parsed = api.parse(data);
           if (parsed && parsed.price > 0) {
-            console.log(`✅ ${api.name} API success:`, parsed);
+            console.log(`✅ ${api.name} API success:`, {
+              price: parsed.price,
+              volume: parsed.volume,
+              marketCap: parsed.marketCap,
+              volumeFormatted: formatCurrency(parsed.volume)
+            });
             return {
               price: parsed.price,
               volume: parsed.volume,
@@ -174,6 +194,38 @@ async function getTokenMetrics(mint) {
     }
     
     console.log('❌ All token metrics APIs failed');
+    
+    // Try one more specific volume endpoint as fallback
+    try {
+      console.log('🔄 Trying fallback volume endpoint...');
+      const fallbackUrl = `https://api.dexscreener.com/latest/dex/search?q=${mint}`;
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          'User-Agent': 'GROOM-Wedding-App/1.0'
+        }
+      });
+      
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        console.log('Fallback API response:', JSON.stringify(fallbackData, null, 2));
+        
+        if (fallbackData.pairs && fallbackData.pairs.length > 0) {
+          const pair = fallbackData.pairs[0];
+          const volume = parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0;
+          console.log(`✅ Fallback volume found: ${formatCurrency(volume)}`);
+          return {
+            price: parseFloat(pair.priceUsd) || 0,
+            volume: volume,
+            marketCap: parseFloat(pair.marketCap) || 0,
+            success: true,
+            source: 'Dexscreener Fallback API'
+          };
+        }
+      }
+    } catch (fallbackError) {
+      console.log('❌ Fallback volume API also failed:', fallbackError.message);
+    }
+    
     return { 
       success: false, 
       error: 'All token metrics APIs failed - token may not be listed yet' 
