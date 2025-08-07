@@ -95,19 +95,27 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     
     const totalRaised = getTotalRaisedNumber();
     
+    // Find the previous milestone amount
     const previousMilestone = milestones
       .filter(m => m.amount < milestoneAmount)
       .reduce((max, current) => current.amount > max ? current.amount : max, 0);
     
-    const progressBase = totalRaised - previousMilestone;
+    // Calculate how much money is available for this specific milestone
+    const availableForThisMilestone = totalRaised - previousMilestone;
+    
+    // Calculate the range this milestone needs to be completed
     const milestoneRange = milestoneAmount - previousMilestone;
     
     if (totalRaised >= milestoneAmount) {
+      // Milestone is fully completed
       return 100;
     } else if (totalRaised <= previousMilestone) {
+      // Not enough money to start this milestone yet
       return 0;
     } else {
-      return Math.min(100, (progressBase / milestoneRange) * 100);
+      // Calculate percentage based on how much of this milestone's range is filled
+      const percentage = (availableForThisMilestone / milestoneRange) * 100;
+      return Math.min(100, Math.max(0, percentage));
     }
   };
 
@@ -120,9 +128,16 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   const isActive = (milestoneAmount, index) => {
     if (!hasValidData()) return false;
     const totalRaised = getTotalRaisedNumber();
+    
+    // First milestone is active if we haven't reached it yet
     if (index === 0) return totalRaised < milestoneAmount;
+    
+    // For other milestones, check if we've completed the previous one but not this one
     const previousMilestone = milestones[index - 1];
-    return totalRaised >= previousMilestone.amount && totalRaised < milestoneAmount;
+    const isPreviousCompleted = totalRaised >= previousMilestone.amount;
+    const isThisCompleted = totalRaised >= milestoneAmount;
+    
+    return isPreviousCompleted && !isThisCompleted;
   };
 
   if (loading) {
@@ -220,12 +235,15 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
                 transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
                 className={`milestone-item ${isCompleted(milestone.amount) ? 'completed' : ''} ${isActive(milestone.amount, index) ? 'active' : ''}`}
               >
-                <div className="milestone-text">
-                  <span className="milestone-emoji" style={{ filter: 'grayscale(100%)' }}>
-                    {milestone.emoji}
-                  </span>
-                  <span>{milestone.description}</span>
-                </div>
+                                 <div className="milestone-text">
+                   <span className={`milestone-emoji ${isCompleted(milestone.amount) ? 'completed' : isActive(milestone.amount, index) ? 'active' : ''}`}>
+                     {milestone.emoji}
+                   </span>
+                   <span>{milestone.description}</span>
+                   {isActive(milestone.amount, index) && (
+                     <span className="active-indicator"> ← Currently Working On</span>
+                   )}
+                 </div>
                 <div className="milestone-amount">
                   ${formatNumber(milestone.amount)}
                 </div>
