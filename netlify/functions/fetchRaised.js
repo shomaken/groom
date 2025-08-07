@@ -109,20 +109,6 @@ async function getTokenMetrics(mint) {
         }
       },
       {
-        name: 'Birdeye Token Info',
-        url: `https://public-api.birdeye.so/public/token?address=${mint}`,
-        parse: (data) => {
-          if (data.success && data.data) {
-            return {
-              price: data.data.price || 0,
-              volume: data.data.volume24h || data.data.volume || 0,
-              marketCap: data.data.marketCap || 0
-            };
-          }
-          return null;
-        }
-      },
-      {
         name: 'Jupiter',
         url: `https://price.jup.ag/v4/price?ids=${mint}`,
         parse: (data) => {
@@ -132,21 +118,6 @@ async function getTokenMetrics(mint) {
               price: tokenData.price,
               volume: tokenData.volume24h || tokenData.volume || 0,
               marketCap: tokenData.price * 1000000000 // Estimate with 1B supply
-            };
-          }
-          return null;
-        }
-      },
-      {
-        name: 'Jupiter Quote',
-        url: `https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${mint}&amount=1000000000&slippageBps=50`,
-        parse: (data) => {
-          if (data && data.outAmount) {
-            // This is just for price, volume will be 0
-            return {
-              price: parseFloat(data.outAmount) / 1000000000,
-              volume: 0, // Jupiter quote doesn't provide volume
-              marketCap: 0
             };
           }
           return null;
@@ -199,8 +170,6 @@ async function getTokenMetrics(mint) {
           console.log(`${api.name} API response:`, JSON.stringify(data, null, 2));
           
           const parsed = api.parse(data);
-          console.log(`${api.name} parsed result:`, parsed);
-          
           if (parsed && parsed.price > 0) {
             console.log(`✅ ${api.name} API success:`, {
               price: parsed.price,
@@ -215,8 +184,6 @@ async function getTokenMetrics(mint) {
               success: true,
               source: `${api.name} API`
             };
-          } else {
-            console.log(`❌ ${api.name} parsed result invalid:`, parsed);
           }
         }
         
@@ -228,68 +195,35 @@ async function getTokenMetrics(mint) {
     
     console.log('❌ All token metrics APIs failed');
     
-    // Try multiple fallback volume endpoints
-    const fallbackApis = [
-      {
-        name: 'Dexscreener Search',
-        url: `https://api.dexscreener.com/latest/dex/search?q=${mint}`
-      },
-      {
-        name: 'Birdeye Token',
-        url: `https://public-api.birdeye.so/public/token?address=${mint}`
-      },
-      {
-        name: 'Solscan Token',
-        url: `https://api.solscan.io/token/meta?token=${mint}`
-      }
-    ];
-    
-    for (const fallbackApi of fallbackApis) {
-      try {
-        console.log(`🔄 Trying ${fallbackApi.name} fallback...`);
-        const fallbackResponse = await fetch(fallbackApi.url, {
-          headers: {
-            'User-Agent': 'GROOM-Wedding-App/1.0'
-          }
-        });
-        
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          console.log(`${fallbackApi.name} response:`, JSON.stringify(fallbackData, null, 2));
-          
-          let volume = 0;
-          let price = 0;
-          let marketCap = 0;
-          
-          if (fallbackApi.name === 'Dexscreener Search' && fallbackData.pairs && fallbackData.pairs.length > 0) {
-            const pair = fallbackData.pairs[0];
-            volume = parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0;
-            price = parseFloat(pair.priceUsd) || 0;
-            marketCap = parseFloat(pair.marketCap) || 0;
-          } else if (fallbackApi.name === 'Birdeye Token' && fallbackData.success && fallbackData.data) {
-            volume = fallbackData.data.volume24h || fallbackData.data.volume || 0;
-            price = fallbackData.data.price || 0;
-            marketCap = fallbackData.data.marketCap || 0;
-          } else if (fallbackApi.name === 'Solscan Token' && fallbackData.data) {
-            volume = fallbackData.data.volume24h || fallbackData.data.volume || 0;
-            price = fallbackData.data.price || 0;
-            marketCap = fallbackData.data.marketCap || 0;
-          }
-          
-          if (volume > 0) {
-            console.log(`✅ ${fallbackApi.name} volume found: ${formatCurrency(volume)}`);
-            return {
-              price: price,
-              volume: volume,
-              marketCap: marketCap,
-              success: true,
-              source: `${fallbackApi.name} Fallback API`
-            };
-          }
+    // Try one more specific volume endpoint as fallback
+    try {
+      console.log('🔄 Trying fallback volume endpoint...');
+      const fallbackUrl = `https://api.dexscreener.com/latest/dex/search?q=${mint}`;
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          'User-Agent': 'GROOM-Wedding-App/1.0'
         }
-      } catch (fallbackError) {
-        console.log(`❌ ${fallbackApi.name} fallback failed:`, fallbackError.message);
+      });
+      
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        console.log('Fallback API response:', JSON.stringify(fallbackData, null, 2));
+        
+        if (fallbackData.pairs && fallbackData.pairs.length > 0) {
+          const pair = fallbackData.pairs[0];
+          const volume = parseFloat(pair.volume24h) || parseFloat(pair.volume) || 0;
+          console.log(`✅ Fallback volume found: ${formatCurrency(volume)}`);
+          return {
+            price: parseFloat(pair.priceUsd) || 0,
+            volume: volume,
+            marketCap: parseFloat(pair.marketCap) || 0,
+            success: true,
+            source: 'Dexscreener Fallback API'
+          };
+        }
       }
+    } catch (fallbackError) {
+      console.log('❌ Fallback volume API also failed:', fallbackError.message);
     }
     
     return { 
