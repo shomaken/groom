@@ -54,17 +54,33 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     return num.toLocaleString();
   };
 
+  // Parse total raised amount from string to number
+  const getTotalRaisedNumber = () => {
+    if (!tokenData.success || !tokenData.isRealLifetimeFees) return 0;
+    
+    // Extract number from string like "$4,800.80" or "Error: No data available"
+    const totalRaisedStr = tokenData.totalRaised;
+    if (totalRaisedStr.includes('Error') || totalRaisedStr === 'Loading...') return 0;
+    
+    // Remove "$" and "," and convert to number
+    const cleanAmount = totalRaisedStr.replace(/[$,]/g, '');
+    const amount = parseFloat(cleanAmount);
+    return isNaN(amount) ? 0 : amount;
+  };
+
   const getMilestoneProgress = (milestoneAmount) => {
+    const totalRaised = getTotalRaisedNumber();
+    
     const previousMilestone = milestones
       .filter(m => m.amount < milestoneAmount)
       .reduce((max, current) => current.amount > max ? current.amount : max, 0);
     
-    const progressBase = tokenData.totalRaised - previousMilestone;
+    const progressBase = totalRaised - previousMilestone;
     const milestoneRange = milestoneAmount - previousMilestone;
     
-    if (tokenData.totalRaised >= milestoneAmount) {
+    if (totalRaised >= milestoneAmount) {
       return 100;
-    } else if (tokenData.totalRaised <= previousMilestone) {
+    } else if (totalRaised <= previousMilestone) {
       return 0;
     } else {
       return Math.min(100, (progressBase / milestoneRange) * 100);
@@ -72,13 +88,15 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   };
 
   const isCompleted = (milestoneAmount) => {
-    return tokenData.totalRaised >= milestoneAmount;
+    const totalRaised = getTotalRaisedNumber();
+    return totalRaised >= milestoneAmount;
   };
 
   const isActive = (milestoneAmount, index) => {
-    if (index === 0) return tokenData.totalRaised < milestoneAmount;
+    const totalRaised = getTotalRaisedNumber();
+    if (index === 0) return totalRaised < milestoneAmount;
     const previousMilestone = milestones[index - 1];
-    return tokenData.totalRaised >= previousMilestone.amount && tokenData.totalRaised < milestoneAmount;
+    return totalRaised >= previousMilestone.amount && totalRaised < milestoneAmount;
   };
 
   if (loading) {
@@ -157,17 +175,20 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
           </motion.div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="milestones"
-        >
-          <h3>Wedding Milestones</h3>
+                 <motion.div
+           initial={{ opacity: 0, y: 30 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.8, delay: 0.6 }}
+           className="milestones"
+         >
+           <h3>Wedding Milestones</h3>
+           <div className="current-progress">
+             <p>Current Progress: <strong>${getTotalRaisedNumber().toLocaleString()}</strong> raised</p>
+           </div>
           <ul className="milestone-list">
-            {milestones.map((milestone, index) => (
-              <motion.li
-                key={milestone.amount}
+                         {milestones.map((milestone, index) => (
+               <motion.li
+                 key={`${milestone.amount}-${getTotalRaisedNumber()}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
@@ -182,19 +203,19 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
                 <div className="milestone-amount">
                   ${formatNumber(milestone.amount)}
                 </div>
-                <div className="milestone-progress">
-                  <div className="progress-bar">
-                    <motion.div
-                      className="progress-fill"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${getMilestoneProgress(milestone.amount)}%` }}
-                      transition={{ duration: 1, delay: 1 + index * 0.1 }}
-                    />
-                  </div>
-                  <span className="progress-text">
-                    {getMilestoneProgress(milestone.amount).toFixed(0)}%
-                  </span>
-                </div>
+                                 <div className="milestone-progress">
+                   <div className="progress-bar">
+                     <motion.div
+                       className="progress-fill"
+                       initial={{ width: 0 }}
+                       animate={{ width: `${getMilestoneProgress(milestone.amount)}%` }}
+                       transition={{ duration: 1.5, ease: "easeOut" }}
+                     />
+                   </div>
+                   <span className="progress-text">
+                     {getMilestoneProgress(milestone.amount).toFixed(0)}%
+                   </span>
+                 </div>
               </motion.li>
             ))}
           </ul>
