@@ -147,14 +147,16 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             {tokenData.totalRaisedSOL && (
               <p className="sol-amount">({tokenData.totalRaisedSOL})</p>
             )}
-            {tokenData.lastUpdated && (
-              <p className="last-updated">
-                Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
-
-                {tokenData.isDemoData && <span className="demo-indicator"> (Demo Data)</span>}
-                {error && <span className="error-indicator"> (Error: {error})</span>}
-              </p>
-            )}
+                         {tokenData.lastUpdated && (
+               <p className="last-updated">
+                 Last updated: {tokenService.getTimeAgo(tokenData.lastUpdated)}
+                 {tokenData.isRealLifetimeFees && <span className="real-data-indicator"> • Real Lifetime Fees</span>}
+                 {tokenData.isRealMetrics && <span className="real-data-indicator"> • Real Token Metrics</span>}
+                 {!tokenData.isRealLifetimeFees && <span className="demo-indicator"> • Demo Lifetime Fees</span>}
+                 {!tokenData.isRealMetrics && <span className="demo-indicator"> • Demo Token Metrics</span>}
+                 {error && <span className="error-indicator"> (Error: {error})</span>}
+               </p>
+             )}
           </motion.div>
         </div>
 
