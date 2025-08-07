@@ -97,12 +97,10 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     
     // Calculate cumulative amounts for sequential milestone filling
     let cumulativeAmount = 0;
-    let milestoneIndex = -1;
     
     // Find which milestone this is and calculate cumulative amount up to previous milestone
     for (let i = 0; i < milestones.length; i++) {
       if (milestones[i].amount === milestoneAmount) {
-        milestoneIndex = i;
         break;
       }
       cumulativeAmount += milestones[i].amount;
