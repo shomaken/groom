@@ -82,7 +82,17 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     return isNaN(amount) ? 0 : amount * multiplier;
   };
 
+  // Check if we have valid data for display
+  const hasValidData = () => {
+    return tokenData.success && 
+           tokenData.isRealLifetimeFees && 
+           !tokenData.totalRaised.includes('Error') &&
+           tokenData.totalRaised !== 'Loading...';
+  };
+
   const getMilestoneProgress = (milestoneAmount) => {
+    if (!hasValidData()) return 0;
+    
     const totalRaised = getTotalRaisedNumber();
     
     const previousMilestone = milestones
@@ -102,11 +112,13 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
   };
 
   const isCompleted = (milestoneAmount) => {
+    if (!hasValidData()) return false;
     const totalRaised = getTotalRaisedNumber();
     return totalRaised >= milestoneAmount;
   };
 
   const isActive = (milestoneAmount, index) => {
+    if (!hasValidData()) return false;
     const totalRaised = getTotalRaisedNumber();
     if (index === 0) return totalRaised < milestoneAmount;
     const previousMilestone = milestones[index - 1];
@@ -196,9 +208,9 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
            className="milestones"
          >
            <h3>Wedding Milestones</h3>
-           <div className="current-progress">
-             <p>Current Progress: <strong>${getTotalRaisedNumber().toLocaleString()}</strong> raised</p>
-           </div>
+                       <div className="current-progress">
+              <p>Current Progress: <strong>{hasValidData() ? `$${getTotalRaisedNumber().toLocaleString()}` : 'Loading...'}</strong> raised</p>
+            </div>
           <ul className="milestone-list">
                          {milestones.map((milestone, index) => (
                <motion.li
