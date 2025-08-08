@@ -85,10 +85,7 @@ const TokenInfo = ({ onNext, onPrev }) => {
               <span>$GROOM</span>
             </div>
 
-            <div className="contract-item">
-              <label>Decimals:</label>
-              <span>9</span>
-            </div>
+            {/* Decimals removed as requested */}
           </div>
         </motion.div>
 
