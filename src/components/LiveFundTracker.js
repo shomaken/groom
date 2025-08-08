@@ -18,7 +18,7 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
     { amount: 2000, description: "Dress and Suit", emoji: "👰🤵" },
     { amount: 3000, description: "Wedding Rings", emoji: "💍💍" },
     { amount: 8000, description: "Honeymoon", emoji: "🏝️✈️" },
-    { amount: 10000, description: "Wedding Car", emoji: "🚗" },
+    { amount: 10000, description: "New Car", emoji: "🚗" },
     { amount: 15000, description: "Wedding Ceremony", emoji: "⛪💒" },
     { amount: 100000, description: "House", emoji: "🏡💕" }
   ];
@@ -310,4 +310,3 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
 };
 
 export default LiveFundTracker;
-
