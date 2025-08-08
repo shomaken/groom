@@ -46,7 +46,7 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
           
           {/* Action Buttons */}
           <div className="navbar-actions">
-            <button className="btn btn-buy" onClick={() => window.open('https://bags.fm/4H2Qjr8rsCj5MpaJXoVyJUC6XkaDupqEAre3r4JqBAGS', '_blank')}>
+            <button className="btn btn-buy" onClick={() => window.open('https://bags.fm/2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS', '_blank')}>
               Buy $GROOM
             </button>
             <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
@@ -100,7 +100,7 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
                 
                 {/* Mobile Action Buttons */}
                 <div className="mobile-actions">
-                  <button className="btn btn-buy" onClick={() => window.open('https://bags.fm/4H2Qjr8rsCj5MpaJXoVyJUC6XkaDupqEAre3r4JqBAGS', '_blank')}>
+                  <button className="btn btn-buy" onClick={() => window.open('https://bags.fm/2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS', '_blank')}>
                     Buy $GROOM
                   </button>
                   <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
