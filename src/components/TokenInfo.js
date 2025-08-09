@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const TokenInfo = ({ onNext, onPrev }) => {
   const [copiedAddress, setCopiedAddress] = useState(false);
   
-  const tokenAddress = "2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS"; // GROOM token address
+  const tokenAddress = "3pbRf4yo42oQCBBHxuDeRWm7vtunBxKSj6thjX2eBAGS"; // GROOM token address
   
   const copyToClipboard = async (text) => {
     try {
@@ -107,7 +107,7 @@ const TokenInfo = ({ onNext, onPrev }) => {
               <div className="platform-logo" style={{ filter: 'grayscale(100%)' }}>🛍️</div>
               <h4>BagsApp</h4>
               <p>The primary marketplace for $GROOM tokens</p>
-              <a href="https://bags.fm/2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS" className="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              <a href="https://bags.fm/3pbRf4yo42oQCBBHxuDeRWm7vtunBxKSj6thjX2eBAGS" className="btn btn-primary" target="_blank" rel="noopener noreferrer">
                 Buy on BagsApp
               </a>
             </motion.div>
@@ -121,7 +121,7 @@ const TokenInfo = ({ onNext, onPrev }) => {
               <div className="platform-logo" style={{ filter: 'grayscale(100%)' }}>📊</div>
               <h4>Birdeye</h4>
               <p>View live charts and trading data</p>
-              <a href="https://birdeye.so/token/2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <a href="https://birdeye.so/token/3pbRf4yo42oQCBBHxuDeRWm7vtunBxKSj6thjX2eBAGS" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
                 View Chart
               </a>
             </motion.div>
@@ -135,7 +135,7 @@ const TokenInfo = ({ onNext, onPrev }) => {
               <div className="platform-logo" style={{ filter: 'grayscale(100%)' }}>🔍</div>
               <h4>Solscan</h4>
               <p>Explore token and transactions</p>
-              <a href="https://solscan.io/token/2FGorVg7jFe2LQHFJBi56c5tYyqK6gFSFERU9VmGBAGS" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              <a href="https://solscan.io/token/3pbRf4yo42oQCBBHxuDeRWm7vtunBxKSj6thjX2eBAGS" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
                 View Token
               </a>
             </motion.div>
