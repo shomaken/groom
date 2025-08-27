@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 
 const LiveFundTracker = ({ onNext, onPrev }) => {
   const milestones = [
-    { amount: 2000, description: "Dress and Suit", emoji: "👰🤵" },
-    { amount: 3000, description: "Wedding Rings", emoji: "💍💍" },
-    { amount: 8000, description: "Honeymoon", emoji: "🏝️✈️" },
-    { amount: 10000, description: "New Car", emoji: "🚗" },
-    { amount: 15000, description: "Wedding Ceremony", emoji: "⛪💒" },
-    { amount: 100000, description: "House", emoji: "🏡💕" }
+    { amount: 2000, description: "Dress and Suit", emoji: "👰🤵", progress: 0 },
+    { amount: 3000, description: "Wedding Rings", emoji: "💍💍", progress: 0 },
+    { amount: 8000, description: "Honeymoon", emoji: "🏝️✈️", progress: 0 },
+    { amount: 10000, description: "New Car", emoji: "🚗", progress: 0 },
+    { amount: 15000, description: "Wedding Ceremony", emoji: "⛪💒", progress: 0 },
+    { amount: 100000, description: "House", emoji: "🏡💕", progress: 0 }
   ];
 
   const formatNumber = (num) => {
@@ -53,6 +53,17 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
                 </div>
                 <div className="milestone-amount">
                   ${formatNumber(milestone.amount)}
+                </div>
+                <div className="milestone-progress">
+                  <div className="progress-bar">
+                    <motion.div
+                      className="progress-fill"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(0, Math.min(100, milestone.progress))}%` }}
+                      transition={{ duration: 1.0, ease: "easeOut" }}
+                    />
+                  </div>
+                  <span className="progress-text">{Math.max(0, Math.min(100, milestone.progress))}%</span>
                 </div>
               </motion.li>
             ))}
