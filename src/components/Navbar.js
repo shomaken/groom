@@ -23,6 +23,8 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const buyUrl = 'https://pump.fun/coin/AGtduuqemj3g8Vd9vy5wUQqgcMJSL1auDmS5qLuL8VYf';
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -46,6 +48,9 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
           
           {/* Action Buttons */}
           <div className="navbar-actions">
+            <button className="btn btn-buy" onClick={() => window.open(buyUrl, '_blank')}>
+              Buy on Pump.fun
+            </button>
             <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
               FOLLOW X
             </button>
@@ -97,6 +102,9 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
                 
                 {/* Mobile Action Buttons */}
                 <div className="mobile-actions">
+                  <button className="btn btn-buy" onClick={() => window.open(buyUrl, '_blank')}>
+                    Buy on Pump.fun
+                  </button>
                   <button className="btn btn-follow" onClick={() => window.open('https://x.com/groomdotfund', '_blank')}>
                     FOLLOW X
                   </button>
