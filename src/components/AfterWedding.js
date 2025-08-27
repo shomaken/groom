@@ -98,7 +98,7 @@ const AfterWedding = ({ onNext, onPrev }) => {
           <div className="card">
             <h4>Sustainable Funding Model</h4>
             <ul>
-              <li>1% of all trading volume continues to flow into the community fund</li>
+              <li>0.05% of all trading volume continues to flow into the community fund</li>
               <li>Transparent allocation of funds through community voting</li>
               <li>Regular reporting on couples helped and funds distributed</li>
               <li>Partnership opportunities with wedding vendors and services</li>
