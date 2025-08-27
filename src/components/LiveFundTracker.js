@@ -58,6 +58,7 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
             ))}
           </ul>
           <p className="daily-update-note">Milestones will be updated daily.</p>
+          <p className="projection-note">Based on current and expected Pump.fun trading volumes and the 0.05% fee allocation, we project reaching the target funding level in approximately six months.</p>
         </motion.div>
       </motion.div>
     </div>
