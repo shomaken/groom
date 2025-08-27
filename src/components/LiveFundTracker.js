@@ -57,7 +57,7 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
               </motion.li>
             ))}
           </ul>
-          <p className="update-note">These milestones will be updated every day.</p>
+          <p className="daily-update-note">Milestones will be updated daily.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -65,5 +65,3 @@ const LiveFundTracker = ({ onNext, onPrev }) => {
 };
 
 export default LiveFundTracker;
-
-
