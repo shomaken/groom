@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 const TokenInfo = ({ onNext, onPrev }) => {
+  const [copied, setCopied] = useState(false);
+  const contractAddress = "AGtduuqemj3g8Vd9vy5wUQqgcMJSL1auDmS5qLuL8VYf";
+  const buyUrl = "https://pump.fun/coin/AGtduuqemj3g8Vd9vy5wUQqgcMJSL1auDmS5qLuL8VYf";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(contractAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      setCopied(false);
+    }
+  };
+
   return (
     <div className="token-info">
       <motion.div
@@ -9,7 +23,8 @@ const TokenInfo = ({ onNext, onPrev }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <h2>Details</h2>
+        <h2>Token Info</h2>
+
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -18,13 +33,26 @@ const TokenInfo = ({ onNext, onPrev }) => {
         >
           <div className="card">
             <div className="card-header">
-              <h3>Coming Soon</h3>
+              <h3>Contract Address</h3>
             </div>
             <div className="utility-explanation">
-              <p>
-                Information about the token and on-chain references will be shared here following launch.
-              </p>
+              <div className="address-row">
+                <code className="contract-address">{contractAddress}</code>
+                <button className="copy-button" onClick={handleCopy}>{copied ? '✓ Copied' : 'Copy'}</button>
+              </div>
             </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="where-to-buy"
+        >
+          <div className="card">
+            <h3>Buy</h3>
+            <button className="btn btn-primary" onClick={() => window.open(buyUrl, '_blank')}>Buy on Pump.fun</button>
           </div>
         </motion.div>
       </motion.div>
