@@ -6,7 +6,6 @@ import CoverPage from './components/CoverPage';
 import OurStory from './components/OurStory';
 import LiveFundTracker from './components/LiveFundTracker';
 import AfterWedding from './components/AfterWedding';
-import TokenInfo from './components/TokenInfo';
 import Contact from './components/Contact';
 import Navbar from './components/Navbar';
 import FloatingHearts from './components/FloatingHearts';
@@ -21,7 +20,6 @@ function App() {
     { id: 'story', component: OurStory, title: "Our Story" },
     { id: 'fund', component: LiveFundTracker, title: "Fund Our Future" },
     { id: 'after', component: AfterWedding, title: "After the Wedding" },
-    { id: 'token', component: TokenInfo, title: "Token Info" },
     { id: 'contact', component: Contact, title: "Contact & Community" }
   ];
 
