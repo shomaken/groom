@@ -10,6 +10,7 @@ const Navbar = ({ currentPage, onPageChange, isCardOpen }) => {
     { id: 'story', name: 'Our Story' },
     { id: 'fund', name: 'Fund Tracker' },
     { id: 'after', name: 'After Wedding' },
+    { id: 'token', name: 'Token Info' },
     { id: 'contact', name: 'Contact' }
   ];
 
